@@ -13,14 +13,14 @@ def send_mail(mail, theme, text, code_flag=False):
         text = text % code
 
     msg = MIMEMultipart()
-    msg['From'] = constants.email
+    msg['From'] = constants.EMAIL
     msg['To'] = mail
     mailsender = smtplib.SMTP('smtp.mail.ru', 587)
     mailsender.starttls()
-    mailsender.login(constants.email, constants.password)
+    mailsender.login(constants.EMAIL, constants.PASSWORD)
     mail_body_html = '<html><head><body>' + text + '</body></head></html>'
     msg = MIMEText(mail_body_html, 'html', 'utf-8')
     msg['Subject'] = Header(theme, 'utf-8')
-    mailsender.sendmail(constants.email, mail, msg.as_string())
+    mailsender.sendmail(constants.EMAIL, mail, msg.as_string())
     mailsender.quit()
     return code

@@ -1,15 +1,17 @@
+import requests
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtWidgets import QMainWindow
-from data_processing import data_validation
-from databases import db_action
+
 from UI import call_ui
+from data_processing import data_validation
+from data_processing.constants import IP, PORT, PROTOCOL
 
 
 class CPWindow(QMainWindow):
-    def __init__(self, conn, login):
+    def __init__(self, login, token):
         super(CPWindow, self).__init__()
-        self.conn = conn
         self.login = login
+        self.token = token
 
         self.setWindowTitle('Change password')
         self.setGeometry(600, 300, 280, 169)
@@ -45,17 +47,34 @@ class CPWindow(QMainWindow):
         if (self.old_password_LineEdit.text() and
                 self.new_password_LineEdit.text() and
                 self.repeat_password_LineEdit.text()):
-            if db_action.get_password(self.conn, self.login) == self.old_password_LineEdit.text():
-                check = data_validation.is_password_valid(self.new_password_LineEdit.text())
-                if check[0]:
+            head = {'Content-Type': 'application/json', 'Authorization': self.token}
+            request = requests.get(
+                f'{PROTOCOL}://{IP}:{PORT}/get_password/',
+                params={'login': self.login},
+                headers=head)
+            if request.ok:
+                if self.old_password_LineEdit.text() == request.content.decode('UTF-8'):
                     if self.new_password_LineEdit.text() == self.repeat_password_LineEdit.text():
-                        db_action.change_password(self.conn, self.login, self.new_password_LineEdit.text())
-                        self.close()
+                        check = data_validation.is_password_valid(self.new_password_LineEdit.text())
+                        if check[0]:
+                            head = {'Content-Type': 'application/json', 'Authorization': self.token}
+                            request = requests.get(
+                                f'{PROTOCOL}://{IP}:{PORT}/change_password/',
+                                params={'login': self.login, 'password': self.new_password_LineEdit.text()},
+                                headers=head)
+                            if not request.ok:
+                                call_ui.show_warning('Error!',
+                                                     f'An error occurred while communicating with the server. Error code: {request.status_code}',
+                                                     'Critical')
+                            else:
+                                self.close()
+                        else:
+                            call_ui.show_warning('Wrong data!', check[1])
                     else:
                         call_ui.show_warning('Wrong data!', 'You entered different passwords')
                 else:
-                    call_ui.show_warning('Wrong data!', check[1])
+                    call_ui.show_warning('Wrong data!', 'You entered wrong password!')
             else:
-                call_ui.show_warning('Wrong data!', 'You entered wrong password!')
-        else:
-            call_ui.show_warning('Wrong data!', 'Check data you entered!')
+                call_ui.show_warning('Error!',
+                                     f'An error occurred while communicating with the server. Error code: {request.status_code}',
+                                     'Critical')

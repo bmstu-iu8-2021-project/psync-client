@@ -9,6 +9,10 @@ def du_menu(obj):
     profileMenu = QMenu('&Profile', obj)
     obj.menuBar.addMenu(profileMenu)
 
+    savedfolAction = QAction(QIcon('icons/change_password.svg'), '&Saved folders', obj)
+    savedfolAction.setStatusTip('Saved folders')
+    savedfolAction.triggered.connect(obj.saved_folders)
+
     changepassAction = QAction(QIcon('icons/change_password.svg'), '&Change password', obj)
     changepassAction.setStatusTip('Change the password')
     changepassAction.triggered.connect(obj.change_password)
@@ -25,6 +29,8 @@ def du_menu(obj):
     exitprAction.setStatusTip('Exit to sign in window')
     exitprAction.triggered.connect(obj.exit_profile)
 
+    profileMenu.addAction(savedfolAction)
+    profileMenu.addSeparator()
     profileMenu.addAction(changepassAction)
     profileMenu.addAction(changemailAction)
     profileMenu.addAction(delacAction)

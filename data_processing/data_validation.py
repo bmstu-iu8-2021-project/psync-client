@@ -1,5 +1,7 @@
 import re
 
+from UI.call_ui import show_warning
+
 
 def is_login_valid(login):
     alphabet = '0123456789qwertyuiopasdfghjklzxcvbnm_-.'
@@ -34,3 +36,27 @@ def is_password_valid(password):
         return False, 'The password is too weak'
     else:
         return False, 'The password must be \n8-40 characters long'
+
+
+def check_request(req):
+    if req.ok:
+        return True
+    else:
+        code = req.status_code
+        if code == 400:
+            show_warning('Error!',
+                         'The operation failed. Token was not found',
+                         'Critical')
+        elif code == 403:
+            show_warning('Error!',
+                         'The operation failed. Token was incorrect',
+                         'Critical')
+        elif code == 404:
+            show_warning('Error!',
+                         'Wrong request',
+                         'Critical')
+        else:
+            show_warning('Error!',
+                         f'Unexpected error with code {code}',
+                         'Critical')
+        return False

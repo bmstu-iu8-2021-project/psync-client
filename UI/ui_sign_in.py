@@ -1,14 +1,17 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QApplication, QMainWindow
 import sys
-from databases import db_action
+
 from UI import call_ui, ui_profile, ui_about, ui_sign_up, create_menu
+from data_processing.constants import IP, PORT, PROTOCOL
+import requests
+import json
 
 
 class SIWindow(QMainWindow):
-    def __init__(self, conn):
+    def __init__(self):
         super(SIWindow, self).__init__()
-        self.conn = conn
+        self.token = ''
 
         self.setWindowTitle('SyncGad • Sign In')
         self.setGeometry(600, 300, 285, 160)
@@ -40,6 +43,38 @@ class SIWindow(QMainWindow):
 
         create_menu.un_menu(self)
 
+    def enter(self):
+        login = self.login_lineedit.text()
+        password = self.password_lineedit.text()
+        request = requests.get(f'{PROTOCOL}://{IP}:{PORT}/auth/',
+                               params={
+                                   'login': login,
+                                   'password': password,
+                               })
+        token = request.content
+        if json.loads(token)['token']:
+            self.token = token
+            self.password_lineedit.setText('')
+            self.p_window = ui_profile.PWindow(self.token, self, login)
+            self.p_window.show()
+            self.hide()
+        else:
+            self.password_lineedit.setText('')
+            call_ui.show_warning('Wrong data!', 'The entered login or password is incorrect.')
+        # key = db_action.access_request(self.conn, login, password)
+        # self.password_lineedit.setText('')
+        # if key:
+        #     self.p_window = ui_profile.PWindow(self.conn, self, login)
+        #     self.p_window.show()
+        #     self.hide()
+        # else:
+        #     call_ui.show_warning('Wrong data!', 'The entered login or password is incorrect.')
+
+    def register(self):
+        self.su_window = ui_sign_up.SUWindow(self)
+        self.su_window.show()
+        self.hide()
+
     @QtCore.pyqtSlot()
     def about(self):
         self.a_window = ui_about.AWindow()
@@ -49,29 +84,12 @@ class SIWindow(QMainWindow):
     def exit(self):
         self.close()
 
-    def enter(self):
-        login = self.login_lineedit.text()
-        password = self.password_lineedit.text()
-        key = db_action.access_request(self.conn, login, password)
-        self.password_lineedit.setText('')
-        if key:
-            self.p_window = ui_profile.PWindow(self.conn, self, login)
-            self.p_window.show()
-            self.hide()
-        else:
-            call_ui.show_warning('Wrong data!', 'The entered login or password is incorrect.')
-
-    def register(self):
-        self.su_window = ui_sign_up.SUWindow(self.conn, self)
-        self.su_window.show()
-        self.hide()
-
     def closeEvent(self, event):
-        db_action.close(self.conn)
+        QtWidgets.QApplication.closeAllWindows()
 
 
-def sign_in_window(conn):
+def sign_in_window():
     si_app = QApplication(sys.argv)
-    si_window = SIWindow(conn)
+    si_window = SIWindow()
     si_window.show()
     sys.exit(si_app.exec_())

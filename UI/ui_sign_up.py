@@ -1,15 +1,15 @@
+import requests
 from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtWidgets import QMainWindow, QInputDialog
+from PyQt5.QtWidgets import QMainWindow
+
+from UI import ui_about, create_menu, ui_profile, call_ui
 from data_processing import data_validation
-from databases import db_action
-from connection import mailing
-from UI import call_ui, ui_about, ui_profile, create_menu
+from data_processing.constants import IP, PORT, PROTOCOL
 
 
 class SUWindow(QMainWindow):
-    def __init__(self, conn, siw):
+    def __init__(self, siw):
         super(SUWindow, self).__init__()
-        self.conn = conn
         self.siw = siw
 
         self.setWindowTitle('SyncGad • Sign Up')
@@ -83,16 +83,6 @@ class SUWindow(QMainWindow):
 
         create_menu.un_menu(self)
 
-    @QtCore.pyqtSlot()
-    def about(self):
-        self.a_window = ui_about.AWindow()
-        self.a_window.show()
-
-    @QtCore.pyqtSlot()
-    def exit(self):
-        self.close()
-        self.siw.close()
-
     def login_valid(self):
         flag, text = data_validation.is_login_valid(self.login_LineEdit.text())
         if not flag and self.login_LineEdit.text():
@@ -144,44 +134,73 @@ class SUWindow(QMainWindow):
 
     def accept(self):
         if self.width() == 280:
-            reg_data = (
-                self.login_LineEdit.text(),
-                self.mail_LineEdit.text(),
-                self.password_LineEdit.text()
-            )
-            request = db_action.check(self.conn, reg_data)
-
-            if request[0]:
-                code = mailing.send_mail(
-                    reg_data[1],
-                    'Verify code',
-                    'Hello, %s!\nThis is a verification code to confirm the mail: %s' % tuple([reg_data[0], '%s']),
-                    True
-                )
-                count = 0
-                while count != 3:
-                    code_input, flag = QInputDialog.getText(
-                        self,
-                        'Verification code',
-                        'The verification code has been sent to the \n'
-                        'specified mail. To complete the registration, \n'
-                        'enter it in the field below.'
-                    )
-                    if flag and code_input:
-                        count += 1
-                        if code_input == code:
-                            db_action.add_user(self.conn, reg_data)
-                            self.p_window = ui_profile.PWindow(self.conn, self.siw, reg_data[0])
-                            self.p_window.show()
-                            self.hide()
-                            break
-                if count == 4:
-                    call_ui.show_warning('Verification error!', 'You have entered the wrong code too many times.')
-                    self.close()
+            if requests.get(f'{PROTOCOL}://{IP}:{PORT}/find_login/',
+                            params={'login': self.login_LineEdit.text()}) == '1':
+                call_ui.show_warning('Wrong data!', 'This login seems to be taken.')
+            elif requests.get(f'{PROTOCOL}://{IP}:{PORT}/find_email/',
+                              params={'email': self.mail_LineEdit.text()}) == '1':
+                call_ui.show_warning('Wrong data!', 'This email seems to be taken.')
             else:
-                call_ui.show_warning('Wrong data!', request[1])
-        else:
-            call_ui.show_warning('Wrong data!', 'Check the correctness of the data you entered.')
+                request = requests.get(f'{PROTOCOL}://{IP}:{PORT}/add_user/',
+                                       params={
+                                           'login': self.login_LineEdit.text(),
+                                           'email': self.mail_LineEdit.text(),
+                                           'password': self.password_LineEdit.text()
+                                       })
+                if data_validation.check_request(request):
+                    request = requests.get(f'{PROTOCOL}://{IP}:{PORT}/auth/',
+                                           params={
+                                               'login': self.login_LineEdit.text(),
+                                               'password': self.password_LineEdit.text(),
+                                           })
+                    if data_validation.check_request(request):
+                        token = request.content
+                        self.p_window = ui_profile.PWindow(token, self.siw, self.login_LineEdit.text())
+                        self.p_window.show()
+                        self.hide()
+
+        #     if request[0]:
+        #         code = mailing.send_mail(
+        #             reg_data[1],
+        #             'Verify code',
+        #             'Hello, %s!\nThis is a verification code to confirm the mail: %s' % tuple([reg_data[0], '%s']),
+        #             True
+        #         )
+        #         count = 0
+        #         while count != 3:
+        #             code_input, flag = QInputDialog.getText(
+        #                 self,
+        #                 'Verification code',
+        #                 'The verification code has been sent to the \n'
+        #                 'specified mail. To complete the registration, \n'
+        #                 'enter it in the field below.'
+        #             )
+        #             if flag and code_input:
+        #                 count += 1
+        #                 if code_input == code:
+        #                     db_action.add_user(self.conn, reg_data)
+        #                     self.p_window = ui_profile.PWindow(self.conn, self.siw, reg_data[0])
+        #                     self.p_window.show()
+        #                     self.hide()
+        #                     break
+        #         if count == 4:
+        #             call_ui.show_warning('Verification error!', 'You have entered the wrong code too many times.')
+        #             self.close()
+        #     else:
+        #         call_ui.show_warning('Wrong data!', request[1])
+        # else:
+        #     call_ui.show_warning('Wrong data!', 'Check the correctness of the data you entered.')
+
+    @QtCore.pyqtSlot()
+    def about(self):
+        self.a_window = ui_about.AWindow()
+        self.a_window.show()
+
+    @QtCore.pyqtSlot()
+    def exit(self):
+        self.close()
+        self.siw.close()
 
     def closeEvent(self, event):
+        QtWidgets.QApplication.closeAllWindows()
         self.siw.show()
