@@ -4,5 +4,5 @@ PASSWORD = 'uCy3DJIhMukxlgI0jAU5'
 
 # for requests
 PROTOCOL = 'http'
-IP = '127.0.0.1'
-PORT = '5555'
+IP = '172.27.0.3'
+PORT = '8080'

@@ -20,16 +20,16 @@ class CEWindow(QMainWindow):
         font = QtGui.QFont()
         font.setPointSize(10)
 
+        self.new_email_LineEdit = QtWidgets.QLineEdit(self)
+        self.new_email_LineEdit.setGeometry(10, 10, 260, 31)
+        self.new_email_LineEdit.setFont(font)
+        self.new_email_LineEdit.setPlaceholderText('Enter your new email')
+
         self.password_LineEdit = QtWidgets.QLineEdit(self)
-        self.password_LineEdit.setGeometry(10, 10, 260, 31)
+        self.password_LineEdit.setGeometry(10, 50, 260, 31)
         self.password_LineEdit.setFont(font)
         self.password_LineEdit.setEchoMode(QtWidgets.QLineEdit.Password)
         self.password_LineEdit.setPlaceholderText('Enter your password')
-
-        self.new_email_LineEdit = QtWidgets.QLineEdit(self)
-        self.new_email_LineEdit.setGeometry(10, 50, 260, 31)
-        self.new_email_LineEdit.setFont(font)
-        self.new_email_LineEdit.setPlaceholderText('Enter your new email')
 
         self.accept_button = QtWidgets.QPushButton(self)
         self.accept_button.setGeometry(180, 90, 90, 28)

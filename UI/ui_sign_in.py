@@ -2,7 +2,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QApplication, QMainWindow
 import sys
 
-from UI import call_ui, ui_profile, ui_about, ui_sign_up, create_menu
+from UI import call_ui, ui_profile, ui_about, ui_sign_up, create_menu, ui_workplace
 from data_processing.constants import IP, PORT, PROTOCOL
 import requests
 import json
@@ -23,7 +23,7 @@ class SIWindow(QMainWindow):
         self.login_lineedit = QtWidgets.QLineEdit(self)
         self.login_lineedit.setGeometry(10, 36, 260, 31)
         self.login_lineedit.setFont(font)
-        self.login_lineedit.setPlaceholderText('Enter your login or email')
+        self.login_lineedit.setPlaceholderText('Enter your login')
 
         self.password_lineedit = QtWidgets.QLineEdit(self)
         self.password_lineedit.setGeometry(10, 76, 260, 31)
@@ -44,33 +44,40 @@ class SIWindow(QMainWindow):
         create_menu.un_menu(self)
 
     def enter(self):
-        login = self.login_lineedit.text()
-        password = self.password_lineedit.text()
-        request = requests.get(f'{PROTOCOL}://{IP}:{PORT}/auth/',
-                               params={
-                                   'login': login,
-                                   'password': password,
-                               })
-        token = request.content
-        if json.loads(token)['token']:
-            self.token = token
-            self.password_lineedit.setText('')
-            self.p_window = ui_profile.PWindow(self.token, self, login)
-            self.p_window.show()
-            self.hide()
-        else:
-            self.password_lineedit.setText('')
-            call_ui.show_warning('Wrong data!', 'The entered login or password is incorrect.')
-        # key = db_action.access_request(self.conn, login, password)
-        # self.password_lineedit.setText('')
-        # if key:
-        #     self.p_window = ui_profile.PWindow(self.conn, self, login)
+        login = 'LOGINLOGINLOGINLOGIN'
+        self.p_window = ui_workplace.WPWindow(self.token, self, login)
+        self.p_window.show()
+        self.hide()
+
+
+        # login = self.login_lineedit.text()
+        # password = self.password_lineedit.text()
+        # request = requests.get(f'{PROTOCOL}://{IP}:{PORT}/auth/',
+        #                        params={
+        #                            'login': login,
+        #                            'password': password,
+        #                        })
+        # token = request.content
+        # if json.loads(token)['token']:
+        #     self.token = token
+        #     self.password_lineedit.setText('')
+        #     self.p_window = ui_profile.PWindow(self.token, self, login)
         #     self.p_window.show()
         #     self.hide()
         # else:
+        #     self.password_lineedit.setText('')
         #     call_ui.show_warning('Wrong data!', 'The entered login or password is incorrect.')
+        # # key = db_action.access_request(self.conn, login, password)
+        # # self.password_lineedit.setText('')
+        # # if key:
+        # #     self.p_window = ui_profile.PWindow(self.conn, self, login)
+        # #     self.p_window.show()
+        # #     self.hide()
+        # # else:
+        # #     call_ui.show_warning('Wrong data!', 'The entered login or password is incorrect.')
 
     def register(self):
+        self.login_lineedit.setText('')
         self.su_window = ui_sign_up.SUWindow(self)
         self.su_window.show()
         self.hide()

@@ -9,23 +9,23 @@ def du_menu(obj):
     profileMenu = QMenu('&Profile', obj)
     obj.menuBar.addMenu(profileMenu)
 
-    savedfolAction = QAction(QIcon('icons/change_password.svg'), '&Saved folders', obj)
+    savedfolAction = QAction(QIcon('icons/menu/change_password.svg'), '&Saved folders', obj)
     savedfolAction.setStatusTip('Saved folders')
     savedfolAction.triggered.connect(obj.saved_folders)
 
-    changepassAction = QAction(QIcon('icons/change_password.svg'), '&Change password', obj)
+    changepassAction = QAction(QIcon('icons/menu/change_password.svg'), '&Change password', obj)
     changepassAction.setStatusTip('Change the password')
     changepassAction.triggered.connect(obj.change_password)
 
-    changemailAction = QAction(QIcon('icons/change_mail.svg'), '&Change mail', obj)
+    changemailAction = QAction(QIcon('icons/menu/change_mail.svg'), '&Change mail', obj)
     changemailAction.setStatusTip('Change the mail address')
     changemailAction.triggered.connect(obj.change_mail)
 
-    delacAction = QAction(QIcon('icons/delete_account.svg'), '&Delete account', obj)
+    delacAction = QAction(QIcon('icons/menu/delete_account.svg'), '&Delete account', obj)
     delacAction.setStatusTip('Delete your account')
     delacAction.triggered.connect(obj.delete_account)
 
-    exitprAction = QAction(QIcon('icons/exit_profile.svg'), '&Exit profile', obj)
+    exitprAction = QAction(QIcon('icons/menu/exit_profile.svg'), '&Exit profile', obj)
     exitprAction.setStatusTip('Exit to sign in window')
     exitprAction.triggered.connect(obj.exit_profile)
 
@@ -40,11 +40,11 @@ def du_menu(obj):
     helpMenu = QMenu('&Help', obj)
     obj.menuBar.addMenu(helpMenu)
 
-    aboutAction = QAction(QIcon('icons/about.svg'), '&About', obj)
+    aboutAction = QAction(QIcon('icons/menu/about.svg'), '&About', obj)
     aboutAction.setStatusTip('About this application')
     aboutAction.triggered.connect(obj.about)
 
-    exitAction = QAction(QIcon('icons/exit.svg'), '&Exit', obj)
+    exitAction = QAction(QIcon('icons/menu/exit.svg'), '&Exit', obj)
     exitAction.setStatusTip('Quit this application')
     exitAction.triggered.connect(obj.exit)
 
@@ -60,11 +60,11 @@ def un_menu(obj):
     helpMenu = QMenu('&Help', obj)
     obj.menuBar.addMenu(helpMenu)
 
-    aboutAction = QAction(QIcon('icons/about.svg'), '&About', obj)
+    aboutAction = QAction(QIcon('icons/menu/about.svg'), '&About', obj)
     aboutAction.setStatusTip('About this application')
     aboutAction.triggered.connect(obj.about)
 
-    exitAction = QAction(QIcon('icons/exit.svg'), '&Exit', obj)
+    exitAction = QAction(QIcon('icons/menu/exit.svg'), '&Exit', obj)
     exitAction.setStatusTip('Quit this application')
     exitAction.triggered.connect(obj.exit)
 
