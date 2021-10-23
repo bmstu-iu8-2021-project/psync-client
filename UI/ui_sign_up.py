@@ -1,10 +1,9 @@
-import requests
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QMainWindow
 
-from UI import ui_about, create_menu, ui_profile, call_ui
+from UI import ui_about, create_menu, ui_workplace
 from data_processing import data_validation
-from data_processing.constants import IP, PORT, PROTOCOL
+from UI_functional.sign_up import accept
 
 
 class SUWindow(QMainWindow):
@@ -45,119 +44,107 @@ class SUWindow(QMainWindow):
         self.pasrep_LineEdit.setPlaceholderText('Repeat your password')
         self.pasrep_LineEdit.textChanged.connect(self.password_same)
 
-        self.signup_button = QtWidgets.QPushButton(self)
-        self.signup_button.setGeometry(180, 196, 90, 28)
-        self.signup_button.setText("Sign up")
-        self.signup_button.clicked.connect(self.accept)
+        self.signup_Button = QtWidgets.QPushButton(self)
+        self.signup_Button.setGeometry(180, 196, 90, 28)
+        self.signup_Button.setText("Sign up")
+        self.signup_Button.clicked.connect(self.accept)
 
         font.setBold(True)
         font.setPointSize(8)
 
-        self.login_lable = QtWidgets.QLabel(self)
-        self.login_lable.setGeometry(280, 35, 0, 0)
-        self.login_lable.setFont(font)
-        self.login_lable.setStyleSheet("color: rgb(255, 0, 0);")
-        self.login_lable.setWordWrap(True)
-        self.login_lable.hide()
+        self.login_Label = QtWidgets.QLabel(self)
+        self.login_Label.setGeometry(280, 35, 0, 0)
+        self.login_Label.setFont(font)
+        self.login_Label.setStyleSheet("color: rgb(255, 0, 0);")
+        self.login_Label.setWordWrap(True)
+        self.login_Label.hide()
 
-        self.mail_lable = QtWidgets.QLabel(self)
-        self.mail_lable.setGeometry(280, 75, 0, 0)  # -7 on y
-        self.mail_lable.setFont(font)
-        self.mail_lable.setStyleSheet("color: rgb(255, 0, 0);")
-        self.mail_lable.setWordWrap(True)
-        self.mail_lable.hide()
+        self.mail_Label = QtWidgets.QLabel(self)
+        self.mail_Label.setGeometry(280, 75, 0, 0)  # -7 on y
+        self.mail_Label.setFont(font)
+        self.mail_Label.setStyleSheet("color: rgb(255, 0, 0);")
+        self.mail_Label.setWordWrap(True)
+        self.mail_Label.hide()
 
-        self.password_lable = QtWidgets.QLabel(self)
-        self.password_lable.setGeometry(280, 115, 0, 0)
-        self.password_lable.setFont(font)
-        self.password_lable.setStyleSheet("color: rgb(255, 0, 0);")
-        self.password_lable.setWordWrap(True)
-        self.password_lable.hide()
+        self.password_Label = QtWidgets.QLabel(self)
+        self.password_Label.setGeometry(280, 115, 0, 0)
+        self.password_Label.setFont(font)
+        self.password_Label.setStyleSheet("color: rgb(255, 0, 0);")
+        self.password_Label.setWordWrap(True)
+        self.password_Label.hide()
 
-        self.pasrep_lable = QtWidgets.QLabel(self)
-        self.pasrep_lable.setGeometry(280, 155, 0, 0)
-        self.pasrep_lable.setFont(font)
-        self.pasrep_lable.setStyleSheet("color: rgb(255, 0, 0);")
-        self.pasrep_lable.setWordWrap(True)
-        self.pasrep_lable.hide()
+        self.pasrep_Label = QtWidgets.QLabel(self)
+        self.pasrep_Label.setGeometry(280, 155, 0, 0)
+        self.pasrep_Label.setFont(font)
+        self.pasrep_Label.setStyleSheet("color: rgb(255, 0, 0);")
+        self.pasrep_Label.setWordWrap(True)
+        self.pasrep_Label.hide()
 
         create_menu.un_menu(self)
+
+    def fix_size(self):
+        if not (self.mail_Label.isVisible() or
+                self.password_Label.isVisible() or
+                self.pasrep_Label.isVisible() or
+                self.login_Label.isVisible()):
+            self.setFixedWidth(280)
 
     def login_valid(self):
         flag, text = data_validation.is_login_valid(self.login_LineEdit.text())
         if not flag and self.login_LineEdit.text():
             self.setFixedWidth(440)
-            self.login_lable.setText(text)
-            self.login_lable.adjustSize()
-            self.login_lable.show()
+            self.login_Label.setText(text)
+            self.login_Label.adjustSize()
+            self.login_Label.show()
         else:
-            self.login_lable.hide()
-            if not (self.mail_lable.isVisible() or self.password_lable.isVisible() or self.pasrep_lable.isVisible()):
-                self.setFixedWidth(280)
+            self.login_Label.hide()
+            self.fix_size()
 
     def mail_valid(self):
         flag, text = data_validation.is_mail_valid(self.mail_LineEdit.text())
         if flag or not self.mail_LineEdit.text():
-            self.mail_lable.hide()
-            if not (self.login_lable.isVisible() or self.password_lable.isVisible() or self.pasrep_lable.isVisible()):
-                self.setFixedWidth(280)
+            self.mail_Label.hide()
+            self.fix_size()
         else:
             self.setFixedWidth(440)
-            self.mail_lable.setText(text)
-            self.mail_lable.adjustSize()
-            self.mail_lable.show()
+            self.mail_Label.setText(text)
+            self.mail_Label.adjustSize()
+            self.mail_Label.show()
 
     def password_valid(self):
         flag, text = data_validation.is_password_valid(self.password_LineEdit.text())
         if flag or not self.password_LineEdit.text():
-            self.password_lable.hide()
-            if not (self.login_lable.isVisible() or self.mail_lable.isVisible() or self.password_lable.isVisible()):
-                self.setFixedWidth(280)
+            self.password_Label.hide()
+            self.fix_size()
         else:
             self.setFixedWidth(440)
-            self.password_lable.setText(text)
-            self.password_lable.adjustSize()
-            self.password_lable.show()
+            self.password_Label.setText(text)
+            self.password_Label.adjustSize()
+            self.password_Label.show()
         if self.pasrep_LineEdit.text() != '':
             self.password_same()
 
     def password_same(self):
         if self.password_LineEdit.text() and self.password_LineEdit.text() == self.pasrep_LineEdit.text():
-            self.pasrep_lable.hide()
-            if not (self.login_lable.isVisible() or self.mail_lable.isVisible() or self.password_lable.isVisible()):
-                self.setFixedWidth(280)
+            self.pasrep_Label.hide()
+            self.fix_size()
         else:
             self.setFixedWidth(440)
-            self.pasrep_lable.setText('Entered passwords do not match')
-            self.pasrep_lable.adjustSize()
-            self.pasrep_lable.show()
+            self.pasrep_Label.setText('Entered passwords do not match')
+            self.pasrep_Label.adjustSize()
+            self.pasrep_Label.show()
 
     def accept(self):
         if self.width() == 280:
-            if requests.get(f'{PROTOCOL}://{IP}:{PORT}/find_login/',
-                            params={'login': self.login_LineEdit.text()}) == '1':
-                call_ui.show_warning('Wrong data!', 'This login seems to be taken.')
-            elif requests.get(f'{PROTOCOL}://{IP}:{PORT}/find_email/',
-                              params={'email': self.mail_LineEdit.text()}) == '1':
-                call_ui.show_warning('Wrong data!', 'This email seems to be taken.')
-            else:
-                request = requests.get(f'{PROTOCOL}://{IP}:{PORT}/add_user/',
-                                       params={
-                                           'login': self.login_LineEdit.text(),
-                                           'email': self.mail_LineEdit.text(),
-                                           'password': self.password_LineEdit.text()
-                                       })
-                if data_validation.check_request(request):
-                    request = requests.get(f'{PROTOCOL}://{IP}:{PORT}/auth/',
-                                           params={
-                                               'login': self.login_LineEdit.text(),
-                                               'password': self.password_LineEdit.text(),
-                                           })
-                    if data_validation.check_request(request):
-                        token = request.content
-                        self.p_window = ui_profile.PWindow(token, self.siw, self.login_LineEdit.text())
-                        self.p_window.show()
-                        self.hide()
+            token = accept(
+                login=self.login_LineEdit.text(),
+                mail=self.mail_LineEdit.text(),
+                password=self.password_LineEdit.text()
+            )
+            if token:
+                self.p_window = ui_workplace.WPWindow(token, self.siw, self.login_LineEdit.text())
+                self.p_window.show()
+                self.hide()
 
         #     if request[0]:
         #         code = mailing.send_mail(

@@ -1,11 +1,10 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QApplication, QMainWindow
 import sys
-
-from UI import call_ui, ui_profile, ui_about, ui_sign_up, create_menu, ui_workplace
-from data_processing.constants import IP, PORT, PROTOCOL
-import requests
 import json
+
+from UI import call_ui, ui_about, ui_sign_up, create_menu, ui_workplace
+from UI_functional.sign_in import auth
 
 
 class SIWindow(QMainWindow):
@@ -20,64 +19,49 @@ class SIWindow(QMainWindow):
         font = QtGui.QFont()
         font.setPointSize(10)
 
-        self.login_lineedit = QtWidgets.QLineEdit(self)
-        self.login_lineedit.setGeometry(10, 36, 260, 31)
-        self.login_lineedit.setFont(font)
-        self.login_lineedit.setPlaceholderText('Enter your login')
+        self.login_LineEdit = QtWidgets.QLineEdit(self)
+        self.login_LineEdit.setGeometry(10, 36, 260, 31)
+        self.login_LineEdit.setFont(font)
+        self.login_LineEdit.setPlaceholderText('Enter your login')
 
-        self.password_lineedit = QtWidgets.QLineEdit(self)
-        self.password_lineedit.setGeometry(10, 76, 260, 31)
-        self.password_lineedit.setFont(font)
-        self.password_lineedit.setEchoMode(QtWidgets.QLineEdit.Password)
-        self.password_lineedit.setPlaceholderText('Enter your password')
+        self.password_LineEdit = QtWidgets.QLineEdit(self)
+        self.password_LineEdit.setGeometry(10, 76, 260, 31)
+        self.password_LineEdit.setFont(font)
+        self.password_LineEdit.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.password_LineEdit.setPlaceholderText('Enter your password')
 
-        self.enter_button = QtWidgets.QPushButton(self)
-        self.enter_button.setGeometry(10, 116, 140, 30)
-        self.enter_button.setText('Sign in')
-        self.enter_button.clicked.connect(self.enter)
+        self.enter_Button = QtWidgets.QPushButton(self)
+        self.enter_Button.setGeometry(10, 116, 140, 30)
+        self.enter_Button.setText('Sign in')
+        self.enter_Button.clicked.connect(self.enter)
 
-        self.registration_button = QtWidgets.QPushButton(self)
-        self.registration_button.setGeometry(160, 116, 110, 30)
-        self.registration_button.setText('Sign up')
-        self.registration_button.clicked.connect(self.register)
+        self.registration_Button = QtWidgets.QPushButton(self)
+        self.registration_Button.setGeometry(160, 116, 110, 30)
+        self.registration_Button.setText('Sign up')
+        self.registration_Button.clicked.connect(self.register)
 
         create_menu.un_menu(self)
 
     def enter(self):
-        login = 'LOGINLOGINLOGINLOGIN'
-        self.p_window = ui_workplace.WPWindow(self.token, self, login)
-        self.p_window.show()
-        self.hide()
-
-
-        # login = self.login_lineedit.text()
-        # password = self.password_lineedit.text()
-        # request = requests.get(f'{PROTOCOL}://{IP}:{PORT}/auth/',
-        #                        params={
-        #                            'login': login,
-        #                            'password': password,
-        #                        })
-        # token = request.content
-        # if json.loads(token)['token']:
-        #     self.token = token
-        #     self.password_lineedit.setText('')
-        #     self.p_window = ui_profile.PWindow(self.token, self, login)
-        #     self.p_window.show()
-        #     self.hide()
-        # else:
-        #     self.password_lineedit.setText('')
-        #     call_ui.show_warning('Wrong data!', 'The entered login or password is incorrect.')
-        # # key = db_action.access_request(self.conn, login, password)
-        # # self.password_lineedit.setText('')
-        # # if key:
-        # #     self.p_window = ui_profile.PWindow(self.conn, self, login)
-        # #     self.p_window.show()
-        # #     self.hide()
-        # # else:
-        # #     call_ui.show_warning('Wrong data!', 'The entered login or password is incorrect.')
+        login = self.login_LineEdit.text()
+        password = self.password_LineEdit.text()
+        if login and password:
+            token = auth(login, password)
+            if json.loads(token)['token']:
+                self.token = token
+                self.password_LineEdit.setText('')
+                self.p_window = ui_workplace.WPWindow(self.token, self, login)
+                self.p_window.show()
+                self.hide()
+            else:
+                self.password_LineEdit.setText('')
+                call_ui.show_warning('Wrong data!', 'The entered login or password is incorrect.')
+        else:
+            self.password_LineEdit.setText('')
+            call_ui.show_warning('Wrong data!', 'The entered login or password is incorrect.')
 
     def register(self):
-        self.login_lineedit.setText('')
+        self.login_LineEdit.setText('')
         self.su_window = ui_sign_up.SUWindow(self)
         self.su_window.show()
         self.hide()

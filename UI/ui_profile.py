@@ -56,47 +56,47 @@ class PWindow(QMainWindow):
         path_name = QFileDialog.getExistingDirectory(self, 'Choose the folder')
         self.path_lineedit.setText(path_name)
 
-    def add_version(self):
-        path = self.path_lineedit.text()
-        if not os.path.exists(path):
-            call_ui.show_warning('Wrong data!', 'This folder does not exist!')
-        else:
-            mac = get_mac()
-            folder_content = get_json(get_files(path))
-            folder_content['login'] = self.login
-            folder_content['mac'] = mac
-            folder_content['path_file'] = path
-
-            version, flag = QInputDialog.getText(
-                self,
-                'Enter version name',
-                'Enter a version name so that you can recognize this version.',
-            )
-            if flag:
-                folder_content['new_version'] = version
-
-                head = {'Content-Type': 'application/json', 'Authorization': self.token}
-                request = requests.get(
-                    f'{PROTOCOL}://{IP}:{PORT}/find_version/',
-                    params={
-                        'login': self.login,
-                        'mac': mac,
-                        'folder_path': path,
-                        'version': version
-                    },
-                    headers=head
-                )
-
-                if check_request(request):
-                    if request.content.decode('UTF-8') == '1':
-                        call_ui.show_warning('Conflict of versions!', 'Version with this name is already exist!')
-                    else:
-                        request = requests.get(
-                            f'{PROTOCOL}://{IP}:{PORT}/add_version/',
-                            data=json.dumps(folder_content),
-                            headers=head
-                        )
-                        check_request(request)
+    # def add_version(self):
+    #     path = self.path_lineedit.text()
+    #     if not os.path.exists(path):
+    #         call_ui.show_warning('Wrong data!', 'This folder does not exist!')
+    #     else:
+    #         mac = get_mac()
+    #         folder_content = get_json(get_files(path))
+    #         folder_content['login'] = self.login
+    #         folder_content['mac'] = mac
+    #         folder_content['path_file'] = path
+    #
+    #         version, flag = QInputDialog.getText(
+    #             self,
+    #             'Enter version name',
+    #             'Enter a version name so that you can recognize this version.',
+    #         )
+    #         if flag:
+    #             folder_content['new_version'] = version
+    #
+    #             head = {'Content-Type': 'application/json', 'Authorization': self.token}
+    #             request = requests.get(
+    #                 f'{PROTOCOL}://{IP}:{PORT}/find_version/',
+    #                 params={
+    #                     'login': self.login,
+    #                     'mac': mac,
+    #                     'folder_path': path,
+    #                     'version': version
+    #                 },
+    #                 headers=head
+    #             )
+    #
+    #             if check_request(request):
+    #                 if request.content.decode('UTF-8') == '1':
+    #                     call_ui.show_warning('Conflict of versions!', 'Version with this name is already exist!')
+    #                 else:
+    #                     request = requests.get(
+    #                         f'{PROTOCOL}://{IP}:{PORT}/add_version/',
+    #                         data=json.dumps(folder_content),
+    #                         headers=head
+    #                     )
+    #                     check_request(request)
 
     def update_version(self):
         path = self.path_lineedit.text()

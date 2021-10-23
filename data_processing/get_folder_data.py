@@ -9,17 +9,15 @@ def get_mac():
     return platform + '_' + mac
 
 
-def get_files(path_file):
-    fls = []
-    for file in os.listdir(path_file):
-        if os.path.isfile(path_file + '/' + file):
-            fls.append(path_file + '/' + file)
-        elif os.path.isdir(path_file + '/' + file):
-            fls += get_files(path_file + '/' + file)
-    return fls
+def get_files(path_name):
+    files_list = []
+    for root, dirs, files in os.walk(path_name):
+        for file in files:
+            files_list.append(os.path.join(root, file))
+    return files_list
 
 
-def get_json(fls):
+def get_json(files):
     table = {
         'login': '',
         'mac': '',
@@ -28,6 +26,6 @@ def get_json(fls):
         'new_version': '',
         'files': dict()
     }
-    for file in fls:
+    for file in files:
         table['files'][file] = os.stat(file).st_mtime
     return table

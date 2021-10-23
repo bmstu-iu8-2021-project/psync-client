@@ -1,10 +1,7 @@
-import requests
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtWidgets import QMainWindow
 
-from UI import call_ui
-from data_processing import data_validation
-from data_processing.constants import IP, PORT, PROTOCOL
+from UI_functional.change_perosnal_data import change_mail
 
 
 class CEWindow(QMainWindow):
@@ -38,31 +35,33 @@ class CEWindow(QMainWindow):
 
     def accept(self):
         if self.password_LineEdit.text() and self.new_email_LineEdit.text():
-            head = {'Content-Type': 'application/json', 'Authorization': self.token}
-            request = requests.get(
-                f'{PROTOCOL}://{IP}:{PORT}/get_password/',
-                params={'login': self.login},
-                headers=head)
-            if request.ok:
-                if self.password_LineEdit.text() == request.content.decode('UTF-8'):
-                    check = data_validation.is_mail_valid(self.new_email_LineEdit.text())
-                    if check[0]:
-                        head = {'Content-Type': 'application/json', 'Authorization': self.token}
-                        request = requests.get(
-                            f'{PROTOCOL}://{IP}:{PORT}/change_mail/',
-                            params={'login': self.login, 'email': self.new_email_LineEdit.text()},
-                            headers=head)
-                        if not request.ok:
-                            call_ui.show_warning('Error!',
-                                                 f'An error occurred while communicating with the server. Error code: {request.status_code}',
-                                                 'Critical')
-                        else:
-                            self.close()
-                    else:
-                        call_ui.show_warning('Wrong data!', check[1])
-                else:
-                    call_ui.show_warning('Wrong data!', 'You entered wrong password!')
-            else:
-                call_ui.show_warning('Error!',
-                                     f'An error occurred while communicating with the server. Error code: {request.status_code}',
-                                     'Critical')
+            if change_mail(
+                login=self.login,
+                new_mail=self.new_email_LineEdit.text(),
+                password=self.password_LineEdit.text(),
+                token=self.token
+            ):
+                self.close()
+
+            # head = {'Content-Type': 'application/json', 'Authorization': self.token}
+            # request = requests.get(
+            #     f'{PROTOCOL}://{IP}:{PORT}/get_password/',
+            #     params={'login': self.login},
+            #     headers=head)
+            # if data_validation.check_request(request):
+            #     if bcrypt.checkpw(self.password_LineEdit.text().encode('UTF-8'), request.content):
+            #         check = data_validation.is_mail_valid(self.new_email_LineEdit.text())
+            #         if check[0]:
+            #             head = {'Content-Type': 'application/json', 'Authorization': self.token}
+            #             request = requests.get(
+            #                 f'{PROTOCOL}://{IP}:{PORT}/change_mail/',
+            #                 params={'login': self.login, 'email': self.new_email_LineEdit.text()},
+            #                 headers=head)
+            #             if not data_validation.check_request(request):
+            #                 pass
+            #             else:
+            #                 self.close()
+            #         else:
+            #             call_ui.show_warning('Wrong data!', check[1])
+            #     else:
+            #         call_ui.show_warning('Wrong data!', 'You entered wrong password!')
