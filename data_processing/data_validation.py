@@ -34,7 +34,7 @@ def is_password_valid(password):
         if all(res):
             return True, ''
         return False, 'The password is too weak'
-    return False, 'The password must be \nlonger than 8 characters'
+    return False, 'The password must be\nlonger than 8 characters'
 
 
 def check_request(req):

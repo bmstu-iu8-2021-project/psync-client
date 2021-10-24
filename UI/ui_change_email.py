@@ -28,10 +28,10 @@ class CEWindow(QMainWindow):
         self.password_LineEdit.setEchoMode(QtWidgets.QLineEdit.Password)
         self.password_LineEdit.setPlaceholderText('Enter your password')
 
-        self.accept_button = QtWidgets.QPushButton(self)
-        self.accept_button.setGeometry(180, 90, 90, 28)
-        self.accept_button.setText("Accept")
-        self.accept_button.clicked.connect(self.accept)
+        self.accept_Button = QtWidgets.QPushButton(self)
+        self.accept_Button.setGeometry(180, 90, 90, 28)
+        self.accept_Button.setText("Accept")
+        self.accept_Button.clicked.connect(self.accept)
 
     def accept(self):
         if self.password_LineEdit.text() and self.new_email_LineEdit.text():

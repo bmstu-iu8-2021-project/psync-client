@@ -49,7 +49,7 @@ def add_folder(login, path, version, token):
 
             # отправляем архив
             request = requests.get(
-                f'{PROTOCOL}://{IP}:{PORT}/send_folder/',
+                f'{PROTOCOL}://{IP}:{PORT}/upload_folder/',
                 files={
                     'file': (zip_name, open(zip_name, 'rb'))
                 },
@@ -87,7 +87,7 @@ def update_folder(login, path, old_version, new_version, token):
     return check_request(request)
 
 
-def delete_folder(login, path, version, token):
+def delete_version(login, path, version, token):
     head = {'Content-Type': 'application/json', 'Authorization': token}
     request = requests.get(
         f'{PROTOCOL}://{IP}:{PORT}/delete_version/',
@@ -131,10 +131,25 @@ def delete_user(login, token, window):
                         },
                         headers=head
                     )
-                    if check_request(request):
-                        return True
+                    return check_request(request)
             else:
                 break
         if count == 3:
             show_warning('Confirmation error!', 'You have entered the wrong password too many times.')
     return False
+
+
+def get_folders(login, token):
+    head = {'Content-Type': 'application/json', 'Authorization': token}
+    # получаем данные о папках этого пользователя, этого устройства
+    request = requests.get(
+        f'{PROTOCOL}://{IP}:{PORT}/get_folders/',
+        params={
+            'login': login,
+            'mac': get_mac(),
+        },
+        headers=head
+    )
+    if check_request(request):
+        return json.loads(request.content.decode('UTF-8'))
+    return None

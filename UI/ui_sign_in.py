@@ -62,6 +62,7 @@ class SIWindow(QMainWindow):
 
     def register(self):
         self.login_LineEdit.setText('')
+        self.password_LineEdit.setText('')
         self.su_window = ui_sign_up.SUWindow(self)
         self.su_window.show()
         self.hide()

@@ -1,9 +1,10 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtWidgets import QMainWindow, QMessageBox, QInputDialog, QFileDialog, QAbstractItemView, QTableWidget
+from PyQt5.QtWidgets import QMainWindow, QMessageBox, QInputDialog, QFileDialog, QAbstractItemView, QTableWidget, \
+    QTableWidgetItem
 from PyQt5.QtGui import QIcon
 
 from UI import ui_about, create_menu, ui_change_password, ui_change_email
-from UI_functional.workplace import add_folder, update_folder, delete_folder, delete_user
+from UI_functional.workplace import add_folder, update_folder, delete_version, delete_user, get_folders
 
 
 class WPWindow(QMainWindow):
@@ -14,45 +15,45 @@ class WPWindow(QMainWindow):
         self.login = login
 
         self.setWindowTitle('SyncGad • Sign In')
-        self.setGeometry(600, 300, 500, 385)
+        self.setGeometry(600, 300, 580, 385)
         self.setFixedSize(self.size())
 
         font = QtGui.QFont()
         font.setPointSize(15)
 
-        self.name_label = QtWidgets.QLabel(self)
-        self.name_label.setGeometry(10, 20, 440, 31)
-        self.name_label.setFont(font)
-        self.name_label.setText(f'Current user: {self.login}')
+        self.name_Label = QtWidgets.QLabel(self)
+        self.name_Label.setGeometry(10, 20, 440, 31)
+        self.name_Label.setFont(font)
+        self.name_Label.setText(f'Current user: {self.login}')
 
-        self.add_button = QtWidgets.QPushButton(self)
-        self.add_button.setGeometry(450, 75, 40, 40)
-        self.add_button.setIcon(QIcon('icons/workplace/add_folder.svg'))
-        self.add_button.setIconSize(QtCore.QSize(30, 30))
-        self.add_button.setToolTip('Add new folder or version')
-        self.add_button.clicked.connect(self.add_folder)
+        self.add_Button = QtWidgets.QPushButton(self)
+        self.add_Button.setGeometry(530, 75, 40, 40)
+        self.add_Button.setIcon(QIcon('icons/workplace/add_folder.svg'))
+        self.add_Button.setIconSize(QtCore.QSize(30, 30))
+        self.add_Button.setToolTip('Add new folder or version')
+        self.add_Button.clicked.connect(self.add_folder)
 
-        self.delete_button = QtWidgets.QPushButton(self)
-        self.delete_button.setGeometry(450, 125, 40, 40)
-        self.delete_button.setIcon(QIcon('icons/workplace/delete_folder.svg'))
-        self.delete_button.setIconSize(QtCore.QSize(30, 30))
-        self.delete_button.setToolTip('Delete chosen version')
-        self.delete_button.clicked.connect(self.delete_folder)
+        self.delete_Button = QtWidgets.QPushButton(self)
+        self.delete_Button.setGeometry(530, 125, 40, 40)
+        self.delete_Button.setIcon(QIcon('icons/workplace/delete_folder.svg'))
+        self.delete_Button.setIconSize(QtCore.QSize(30, 30))
+        self.delete_Button.setToolTip('Delete chosen version')
+        self.delete_Button.clicked.connect(self.delete_version)
 
-        self.update_button = QtWidgets.QPushButton(self)
-        self.update_button.setGeometry(450, 175, 40, 40)
-        self.update_button.setIcon(QIcon('icons/workplace/update_folder.svg'))
-        self.update_button.setIconSize(QtCore.QSize(30, 30))
-        self.update_button.setToolTip('Update chosen folder')
-        self.update_button.clicked.connect(self.update_version)
+        self.update_Button = QtWidgets.QPushButton(self)
+        self.update_Button.setGeometry(530, 175, 40, 40)
+        self.update_Button.setIcon(QIcon('icons/workplace/update_folder.svg'))
+        self.update_Button.setIconSize(QtCore.QSize(30, 30))
+        self.update_Button.setToolTip('Update chosen folder')
+        self.update_Button.clicked.connect(self.update_version)
 
-        self.sync_button = QtWidgets.QPushButton(self)
-        self.sync_button.setGeometry(450, 225, 40, 40)
-        self.sync_button.setIcon(QIcon('icons/workplace/sync_folder.svg'))
-        self.sync_button.setIconSize(QtCore.QSize(30, 30))
-        self.sync_button.setToolTip('Synchronize chosen folder')
+        self.sync_Button = QtWidgets.QPushButton(self)
+        self.sync_Button.setGeometry(530, 225, 40, 40)
+        self.sync_Button.setIcon(QIcon('icons/workplace/sync_folder.svg'))
+        self.sync_Button.setIconSize(QtCore.QSize(30, 30))
+        self.sync_Button.setToolTip('Synchronize chosen folder')
 
-        self.tableWidget = QTableWidget(self)
+        self.folders_tableWidget = QTableWidget(self)
         self.create_table()
 
         create_menu.du_menu(self)
@@ -60,34 +61,32 @@ class WPWindow(QMainWindow):
     def create_table(self):
         columns = 3
         rows = 10
-        # 430 = 300 + 60 + 70
-        self.tableWidget.setGeometry(
-            QtCore.QRect(10, 52, 430, self.tableWidget.verticalHeader().height() * (rows + 1) + 15))
-        self.tableWidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.tableWidget.setRowCount(rows)
-        self.tableWidget.setColumnCount(columns)
-        self.tableWidget.setHorizontalHeaderLabels(('Folder', 'Version', 'Edited at'))
-        self.tableWidget.setColumnWidth(0, 278)
-        self.tableWidget.setColumnWidth(1, 60)
-        self.tableWidget.setColumnWidth(2, 90)
+        # 510 = 280 + 60 + 170
+        self.folders_tableWidget.setGeometry(
+            QtCore.QRect(10, 52, 510, self.folders_tableWidget.verticalHeader().height() * (rows + 1) + 15))
+        self.folders_tableWidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.folders_tableWidget.setRowCount(rows)
+        self.folders_tableWidget.setColumnCount(columns)
+        self.folders_tableWidget.setHorizontalHeaderLabels(('Folder', 'Version', 'Edited at'))
+        self.folders_tableWidget.setColumnWidth(0, 278)
+        self.folders_tableWidget.setColumnWidth(1, 60)
+        self.folders_tableWidget.setColumnWidth(2, 170)
 
-        self.tableWidget.verticalHeader().setVisible(False)
-        self.tableWidget.horizontalHeader().setHighlightSections(False)
-        self.tableWidget.horizontalHeader().setSortIndicatorShown(False)
-        self.tableWidget.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableWidget.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.tableWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
-        self.tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
-
-        # self.tableWidget.itemDoubleClicked.connect(self.get_files)
+        self.folders_tableWidget.verticalHeader().setVisible(False)
+        self.folders_tableWidget.horizontalHeader().setHighlightSections(False)
+        self.folders_tableWidget.horizontalHeader().setSortIndicatorShown(False)
+        self.folders_tableWidget.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.folders_tableWidget.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.folders_tableWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+        self.folders_tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
 
         self.fill_table()
 
     # def get_files(self):
-    #     row = self.tableWidget.currentRow()
-    #     if not (self.tableWidget.item(row, 0) is None):
-    #         folder = self.tableWidget.item(row, 0).text()
-    #         version = self.tableWidget.item(row, 1).text()
+    #     row = self.folders_tableWidget.currentRow()
+    #     if not (self.folders_tableWidget.item(row, 0) is None):
+    #         folder = self.folders_tableWidget.item(row, 0).text()
+    #         version = self.folders_tableWidget.item(row, 1).text()
     #         self.f_window = ui_files.FWindow(self.token, self.login, folder, version)
     #         self.f_window.show()
 
@@ -172,18 +171,18 @@ class WPWindow(QMainWindow):
             #                 if check_request(request):
             #                     self.fill_table()
 
-    def delete_folder(self):
-        row = self.tableWidget.currentRow()
-        if not (self.tableWidget.item(row, 0) is None):
-            if delete_folder(
+    def delete_version(self):
+        row = self.folders_tableWidget.currentRow()
+        if not (self.folders_tableWidget.item(row, 0) is None):
+            if delete_version(
                 login=self.login,
-                path=self.tableWidget.item(row, 0).text(),
-                version=self.tableWidget.item(row, 1).text(),
+                path=self.folders_tableWidget.item(row, 0).text(),
+                version=self.folders_tableWidget.item(row, 1).text(),
                 token=self.token
             ):
                 self.fill_table()
-        #     folder = self.tableWidget.item(row, 0).text()
-        #     version = self.tableWidget.item(row, 1).text()
+        #     folder = self.folders_tableWidget.item(row, 0).text()
+        #     version = self.folders_tableWidget.item(row, 1).text()
         #
         #     head = {'Content-Type': 'application/json', 'Authorization': self.token}
         #     # удаляем данные
@@ -204,7 +203,7 @@ class WPWindow(QMainWindow):
 
     # заполнение таблицы актуальными данными (старые стираются)
     def fill_table(self):
-        self.tableWidget.setRowCount(10)
+        self.folders_tableWidget.setRowCount(10)
         # head = {'Content-Type': 'application/json', 'Authorization': self.token}
         # # получаем данные о папках этого пользователя, этого устройства
         # request = requests.get(
@@ -217,25 +216,26 @@ class WPWindow(QMainWindow):
         # )
         # if check_request(request):
         #     data = json.loads(request.content.decode('UTF-8'))
-        #
-        #     data_count = len(data)
-        #
-        #     self.tableWidget.setRowCount(0)
-        #     if data_count <= 10:
-        #         self.tableWidget.setColumnWidth(0, 298)
-        #         self.tableWidget.setRowCount(10)
-        #     else:
-        #         self.tableWidget.setColumnWidth(0, 284)
-        #         self.tableWidget.setRowCount(data_count)
-        #     for i in range(len(data.keys())):
-        #         key = list(data.keys())[i]
-        #         for j in range(len(data[key])):
-        #             self.tableWidget.setItem(j, i, QTableWidgetItem(str(data[key][j])))
-        #
-        # # добавляем подсказки к ячейкам первого столбца
-        # for i in range(self.tableWidget.rowCount()):
-        #     if not self.tableWidget.item(i, 0) is None:
-        #         self.tableWidget.item(i, 0).setToolTip(self.tableWidget.item(i, 0).text())
+        
+        data = get_folders(login=self.login, token=self.token)
+        if not (data is None):
+            data_count = len(data)
+            self.folders_tableWidget.setRowCount(0)
+            if data_count <= 10:
+                # self.folders_tableWidget.setColumnWidth(0, 298)
+                self.folders_tableWidget.setRowCount(10)
+            else:
+                # self.folders_tableWidget.setColumnWidth(0, 284)
+                self.folders_tableWidget.setRowCount(data_count)
+            for i in range(len(data.keys())):
+                key = list(data.keys())[i]
+                for j in range(len(data[key])):
+                    self.folders_tableWidget.setItem(j, i, QTableWidgetItem(str(data[key][j])))
+
+        # добавляем подсказки к ячейкам первого столбца
+        for i in range(self.folders_tableWidget.rowCount()):
+            if not self.folders_tableWidget.item(i, 0) is None:
+                self.folders_tableWidget.item(i, 0).setToolTip(self.folders_tableWidget.item(i, 0).text())
 
     def add_version(self):
         pass
@@ -281,8 +281,8 @@ class WPWindow(QMainWindow):
         #                 check_request(request)
 
     def update_version(self):
-        row = self.tableWidget.currentRow()
-        if not (self.tableWidget.item(row, 0) is None):
+        row = self.folders_tableWidget.currentRow()
+        if not (self.folders_tableWidget.item(row, 0) is None):
             new_version, flag = QInputDialog.getText(
                 self,
                 'Enter version name',
@@ -291,15 +291,15 @@ class WPWindow(QMainWindow):
             if flag:
                 if update_folder(
                         login=self.login,
-                        path=self.tableWidget.item(row, 0).text(),
-                        old_version=self.tableWidget.item(row, 1).text(),
+                        path=self.folders_tableWidget.item(row, 0).text(),
+                        old_version=self.folders_tableWidget.item(row, 1).text(),
                         new_version=new_version,
                         token=self.token
                 ):
                     self.fill_table()
 
-            # path = self.tableWidget.item(row, 0).text()
-            # old_version = self.tableWidget.item(row, 1).text()
+            # path = self.folders_tableWidget.item(row, 0).text()
+            # old_version = self.folders_tableWidget.item(row, 1).text()
             # mac = get_mac()
             # data = get_json(get_files(path))
             # data['login'] = self.login
