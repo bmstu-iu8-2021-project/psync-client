@@ -19,6 +19,7 @@ def add_folder(login, path, version, token):
     folder_content['mac'] = mac
     folder_content['path_file'] = path
     folder_content['new_version'] = version
+    folder_content['is_actual'] = False
 
     head = {'Content-Type': 'application/json', 'Authorization': token}
 
@@ -153,3 +154,43 @@ def get_folders(login, token):
     if check_request(request):
         return json.loads(request.content.decode('UTF-8'))
     return None
+
+
+def make_actual(login, path, version, token):
+    head = {'Content-Type': 'application/json', 'Authorization': token}
+    request = requests.get(
+        f'{PROTOCOL}://{IP}:{PORT}/make_actual/',
+        params={
+            'login': login,
+            'mac': get_mac(),
+            'path': path,
+            'version': version
+        },
+        headers=head
+    )
+    return check_request(request)
+
+
+def check_actuality(login, data, token):
+    if data.keys():
+        to_check = {'zip_name': [], 'content': []}
+        for row in range(len(data['is_actual'])):
+            if data['is_actual'][row] == 'True':
+                path = data['folder'][row]
+                version = data['version'][row]
+                to_check['zip_name'].append('_'.join([login, path[path.rfind('/') + 1:], version]) + '.zip')
+                to_check['content'].append(get_json(get_files(data['folder'][row]))['files'])
+        output = json.dumps(to_check)
+
+        head = {'Content-Type': 'application/json', 'Authorization': token}
+        request = requests.get(
+            f'{PROTOCOL}://{IP}:{PORT}/check_actuality/',
+            data=output,
+            headers=head
+        )
+        if check_request(request):
+            print(json.loads(request.content.decode('UTF-8')))
+
+
+def check_actual(login, data, token):
+    pass

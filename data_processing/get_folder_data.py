@@ -24,8 +24,9 @@ def get_json(files):
         'path_file': '',
         'old_version': '',
         'new_version': '',
+        'is_actual': '',
         'files': dict()
     }
     for file in files:
-        table['files'][file] = os.stat(file).st_mtime
+        table['files'][file] = round(os.stat(file).st_mtime, 0)
     return table
