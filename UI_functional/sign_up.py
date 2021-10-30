@@ -36,6 +36,7 @@ def accept(login, mail, password):
                                        params={
                                            'login': login,
                                            'password': password,
+                                           'mac': get_mac()
                                        })
                 if check_request(request):
                     return request.content

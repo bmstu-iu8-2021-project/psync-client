@@ -3,9 +3,9 @@ from PyQt5.QtWidgets import QMainWindow, QMessageBox, QInputDialog, QFileDialog,
     QTableWidgetItem
 from PyQt5.QtGui import QIcon
 
-from UI import ui_about, create_menu, ui_change_password, ui_change_email
-from UI_functional.workplace import add_folder, update_folder, delete_version, delete_user, get_folders, make_actual, \
-    check_actuality
+from UI import ui_about, create_menu, ui_change_password, ui_change_email, ui_to_change
+from UI_functional.workplace import add_folder, update_folder, delete_version, delete_user, get_folders, make_actual
+from UI_functional.workplace import check_actuality, download_folder
 
 
 class WPWindow(QMainWindow):
@@ -15,7 +15,7 @@ class WPWindow(QMainWindow):
         self.siw = siw
         self.login = login
 
-        self.setWindowTitle('SyncGad • Sign In')
+        self.setWindowTitle('SyncGad • Workplace')
         self.setGeometry(600, 300, 580, 385)
         self.setFixedSize(self.size())
 
@@ -48,8 +48,15 @@ class WPWindow(QMainWindow):
         self.update_Button.setToolTip('Update chosen folder')
         self.update_Button.clicked.connect(self.update_version)
 
+        self.download_Button = QtWidgets.QPushButton(self)
+        self.download_Button.setGeometry(530, 225, 40, 40)
+        self.download_Button.setIcon(QIcon('icons/workplace/download_folder.svg'))
+        self.download_Button.setIconSize(QtCore.QSize(30, 30))
+        self.download_Button.setToolTip('Download chosen folder')
+        self.download_Button.clicked.connect(self.download_version)
+
         self.sync_Button = QtWidgets.QPushButton(self)
-        self.sync_Button.setGeometry(530, 225, 40, 40)
+        self.sync_Button.setGeometry(530, 285, 40, 40)
         self.sync_Button.setIcon(QIcon('icons/workplace/sync_folder.svg'))
         self.sync_Button.setIconSize(QtCore.QSize(30, 30))
         self.sync_Button.setToolTip('Synchronize chosen folder')
@@ -66,6 +73,7 @@ class WPWindow(QMainWindow):
         self.folders_tableWidget.setGeometry(
             QtCore.QRect(10, 52, 510, self.folders_tableWidget.verticalHeader().height() * (rows + 1) + 15))
         self.folders_tableWidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        # self.folders_tableWidget.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         self.folders_tableWidget.setRowCount(rows)
         self.folders_tableWidget.setColumnCount(columns)
         self.folders_tableWidget.setHorizontalHeaderLabels(('Folder', 'Version', 'Actual for'))
@@ -84,6 +92,7 @@ class WPWindow(QMainWindow):
         self.folders_tableWidget.doubleClicked.connect(self.make_actual)
 
         self.fill_table()
+        self.check_actuality()
 
     def make_actual(self):
         row = self.folders_tableWidget.currentRow()
@@ -92,10 +101,10 @@ class WPWindow(QMainWindow):
             font.setBold(True)
             if not (self.folders_tableWidget.item(row, 0).font() == font):
                 if make_actual(
-                    login=self.login,
-                    path=self.folders_tableWidget.item(row, 0).text(),
-                    version=self.folders_tableWidget.item(row, 1).text(),
-                    token=self.token
+                        login=self.login,
+                        path=self.folders_tableWidget.item(row, 0).text(),
+                        version=self.folders_tableWidget.item(row, 1).text(),
+                        token=self.token
                 ):
                     self.fill_table()
 
@@ -120,24 +129,29 @@ class WPWindow(QMainWindow):
         row = self.folders_tableWidget.currentRow()
         if not (self.folders_tableWidget.item(row, 0) is None):
             if delete_version(
-                login=self.login,
-                path=self.folders_tableWidget.item(row, 0).text(),
-                version=self.folders_tableWidget.item(row, 1).text(),
-                token=self.token
+                    login=self.login,
+                    path=self.folders_tableWidget.item(row, 0).text(),
+                    version=self.folders_tableWidget.item(row, 1).text(),
+                    token=self.token
             ):
                 self.fill_table()
 
     # заполнение таблицы актуальными данными (старые стираются)
     def fill_table(self):
         self.folders_tableWidget.setRowCount(10)
-        data = get_folders(login=self.login, token=self.token)
-        if not (data is None):
-            data_count = len(data)
-            self.folders_tableWidget.setRowCount(0)
+        data = get_folders(
+            login=self.login,
+            token=self.token
+        )
+        self.folders_tableWidget.setRowCount(0)
+        self.folders_tableWidget.setRowCount(10)
+        if data.keys():
+            data_count = len(list(data.values())[0])
             if data_count <= 10:
-                self.folders_tableWidget.setRowCount(10)
+                self.folders_tableWidget.setColumnWidth(0, 278)
             else:
                 self.folders_tableWidget.setRowCount(data_count)
+                self.folders_tableWidget.setColumnWidth(0, 264)
             font = QtGui.QFont()
             font.setBold(True)
             for i in range(len(data.keys()) - 1):
@@ -152,30 +166,46 @@ class WPWindow(QMainWindow):
             if not self.folders_tableWidget.item(i, 0) is None:
                 self.folders_tableWidget.item(i, 0).setToolTip(self.folders_tableWidget.item(i, 0).text())
 
+    def check_actuality(self):
+        data = get_folders(
+            login=self.login,
+            token=self.token
+        )
         # проверяем, свежие ли данные в акутальных версиях
-        check_actuality(self.login, data, self.token)
-
-    def add_version(self):
-        pass
+        to_change = check_actuality(self.login, data, self.token)
+        if not (to_change is None):
+            # self.setWindowModality(QtCore.Qt.ApplicationModal)
+            self.tc_window = ui_to_change.TCWindow(self.login, self.token, to_change, self)
+            self.tc_window.show()
+            self.setEnabled(False)
 
     def update_version(self):
-        pass
-        # row = self.folders_tableWidget.currentRow()
-        # if not (self.folders_tableWidget.item(row, 0) is None):
-        #     new_version, flag = QInputDialog.getText(
-        #         self,
-        #         'Enter version name',
-        #         'Enter a new version name',
-        #     )
-        #     if flag:
-        #         if update_folder(
-        #                 login=self.login,
-        #                 path=self.folders_tableWidget.item(row, 0).text(),
-        #                 old_version=self.folders_tableWidget.item(row, 1).text(),
-        #                 new_version=new_version,
-        #                 token=self.token
-        #         ):
-        #             self.fill_table()
+        row = self.folders_tableWidget.currentRow()
+        if not (self.folders_tableWidget.item(row, 0) is None):
+            if update_folder(
+                    login=self.login,
+                    path=self.folders_tableWidget.item(row, 0).text(),
+                    version=self.folders_tableWidget.item(row, 1).text(),
+                    token=self.token
+            ):
+                self.fill_table()
+
+    def download_version(self):
+        row = self.folders_tableWidget.currentRow()
+        if not (self.folders_tableWidget.item(row, 0) is None):
+            if download_folder(
+                    login=self.login,
+                    path=self.folders_tableWidget.item(row, 0).text(),
+                    version=self.folders_tableWidget.item(row, 1).text(),
+                    token=self.token
+            ):
+                if make_actual(
+                    login=self.login,
+                    path=self.folders_tableWidget.item(row, 0).text(),
+                    version=self.folders_tableWidget.item(row, 1).text(),
+                    token=self.token
+                ):
+                    self.fill_table()
 
     def synchronize(self):
         pass
@@ -203,11 +233,10 @@ class WPWindow(QMainWindow):
 
     def delete_dialog_action(self, button):
         if button.text() == '&Yes':
-
             if delete_user(
-                login=self.login,
-                token=self.token,
-                window=self
+                    login=self.login,
+                    token=self.token,
+                    window=self
             ):
                 self.siw.login_LineEdit.setText('')
                 self.close()

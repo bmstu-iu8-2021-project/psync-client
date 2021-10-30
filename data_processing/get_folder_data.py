@@ -24,7 +24,7 @@ def get_json(files):
         'path_file': '',
         'old_version': '',
         'new_version': '',
-        'is_actual': '',
+        'is_actual': False,
         'files': dict()
     }
     for file in files:

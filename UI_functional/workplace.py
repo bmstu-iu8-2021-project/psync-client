@@ -12,6 +12,31 @@ from data_processing.data_validation import check_request
 from UI.call_ui import show_warning
 
 
+def upload_folder(login, path, version, token):
+    # создаем архив
+    zip_name = '_'.join([login, path[path.rfind('/') + 1:], version]) + '.zip'
+    zip_folder = zipfile.ZipFile(zip_name, 'w')
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            zip_folder.write(os.path.join(root, file))
+    zip_folder.close()
+
+    # отправляем архив
+    request = requests.get(
+        f'{PROTOCOL}://{IP}:{PORT}/upload_folder/',
+        files={
+            'file': (zip_name, open(zip_name, 'rb'))
+        },
+        headers={'Authorization': token},
+    )
+
+    if check_request(request):
+        # удаляем архив
+        os.remove(zip_name)
+        return True
+    return False
+
+
 def add_folder(login, path, version, token):
     mac = get_mac()
     folder_content = get_json(get_files(path))
@@ -40,27 +65,32 @@ def add_folder(login, path, version, token):
             show_warning('Conflict of versions!',
                          'Version with this name for this folder is already exist!')
         else:
-            # создаем архив
-            zip_name = '_'.join([login, path[path.rfind('/') + 1:], version]) + '.zip'
-            zip_folder = zipfile.ZipFile(zip_name, 'w')
-            for root, dirs, files in os.walk(path):
-                for file in files:
-                    zip_folder.write(os.path.join(root, file))
-            zip_folder.close()
-
-            # отправляем архив
-            request = requests.get(
-                f'{PROTOCOL}://{IP}:{PORT}/upload_folder/',
-                files={
-                    'file': (zip_name, open(zip_name, 'rb'))
-                },
-                headers={'Authorization': token},
-            )
-
-            if check_request(request):
-                # удаляем архив
-                os.remove(zip_name)
-
+            # # создаем архив
+            # zip_name = '_'.join([login, path[path.rfind('/') + 1:], version]) + '.zip'
+            # zip_folder = zipfile.ZipFile(zip_name, 'w')
+            # for root, dirs, files in os.walk(path):
+            #     for file in files:
+            #         zip_folder.write(os.path.join(root, file))
+            # zip_folder.close()
+            #
+            # # отправляем архив
+            # request = requests.get(
+            #     f'{PROTOCOL}://{IP}:{PORT}/upload_folder/',
+            #     files={
+            #         'file': (zip_name, open(zip_name, 'rb'))
+            #     },
+            #     headers={'Authorization': token},
+            # )
+            #
+            # if check_request(request):
+            #     # удаляем архив
+            #     os.remove(zip_name)
+            if upload_folder(
+                    login=login,
+                    path=path,
+                    version=version,
+                    token=token
+            ):
                 # отправляем данные в бд
                 request = requests.get(
                     f'{PROTOCOL}://{IP}:{PORT}/add_version/',
@@ -68,24 +98,37 @@ def add_folder(login, path, version, token):
                     headers=head,
                 )
                 return check_request(request)
-    return ''
+    return False
 
 
-def update_folder(login, path, old_version, new_version, token):
-    data = get_json(get_files(path))
-    data['login'] = login
-    data['mac'] = get_mac()
-    data['path_file'] = path
-    data['old_version'] = old_version
-    data['new_version'] = new_version
+def update_folder(login, path, version, token, is_actual=False):
+    if delete_version(
+        login=login,
+        path=path,
+        version=version,
+        token=token
+    ):
+        if upload_folder(
+            login=login,
+            path=path,
+            version=version,
+            token=token
+        ):
+            data = get_json(get_files(path))
+            data['login'] = login
+            data['mac'] = get_mac()
+            data['path_file'] = path
+            data['new_version'] = version
+            data['is_actual'] = is_actual
 
-    head = {'Content-Type': 'application/json', 'Authorization': token}
-    request = requests.get(
-        f'{PROTOCOL}://{IP}:{PORT}/update_version/',
-        data=json.dumps(data),
-        headers=head
-    )
-    return check_request(request)
+            head = {'Content-Type': 'application/json', 'Authorization': token}
+            request = requests.get(
+                f'{PROTOCOL}://{IP}:{PORT}/add_version/',
+                data=json.dumps(data),
+                headers=head
+            )
+            return check_request(request)
+    return False
 
 
 def delete_version(login, path, version, token):
@@ -173,12 +216,13 @@ def make_actual(login, path, version, token):
 
 def check_actuality(login, data, token):
     if data.keys():
-        to_check = {'zip_name': [], 'content': []}
+        to_check = {'zip_name': [], 'folder_name': [], 'content': []}
         for row in range(len(data['is_actual'])):
             if data['is_actual'][row] == 'True':
                 path = data['folder'][row]
                 version = data['version'][row]
                 to_check['zip_name'].append('_'.join([login, path[path.rfind('/') + 1:], version]) + '.zip')
+                to_check['folder_name'].append(path)
                 to_check['content'].append(get_json(get_files(data['folder'][row]))['files'])
         output = json.dumps(to_check)
 
@@ -189,8 +233,58 @@ def check_actuality(login, data, token):
             headers=head
         )
         if check_request(request):
-            print(json.loads(request.content.decode('UTF-8')))
+            to_change = json.loads(request.content.decode('UTF-8'))
+            if to_change['folder_name']:
+                return to_change
+    return None
 
 
-def check_actual(login, data, token):
-    pass
+def make_no_actual(login, path, token):
+    head = {'Content-Type': 'application/json', 'Authorization': token}
+    request = requests.get(
+        f'{PROTOCOL}://{IP}:{PORT}/make_no_actual/',
+        params={
+            'login': login,
+            'mac': get_mac(),
+            'path': path,
+        },
+        headers=head
+    )
+    return check_request(request)
+
+
+def update_actual_folder(login, path, token):
+    head = {'Content-Type': 'application/json', 'Authorization': token}
+    request = requests.get(
+        f'{PROTOCOL}://{IP}:{PORT}/get_actual_version/',
+        params={
+            'login': login,
+            'mac': get_mac(),
+            'path': path
+        },
+        headers=head
+    )
+    if check_request(request):
+        version = request.content.decode('UTF-8')
+        return update_folder(
+            login=login,
+            path=path,
+            version=version,
+            is_actual=True,
+            token=token
+        )
+    return False
+
+
+def download_folder(login, path, version, token):
+    head = {'Content-Type': 'application/json', 'Authorization': token}
+    request = requests.get(
+        f'{PROTOCOL}://{IP}:{PORT}/download_folder/',
+        params={
+            'login': login,
+            'mac': get_mac(),
+            'path': path,
+            'version': version
+        },
+        headers=head
+    )

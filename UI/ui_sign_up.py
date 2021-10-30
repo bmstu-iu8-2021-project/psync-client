@@ -2,6 +2,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QMainWindow
 
 from UI import ui_about, create_menu, ui_workplace
+from UI.call_ui import show_warning
 from data_processing import data_validation
 from UI_functional.sign_up import accept
 
@@ -145,6 +146,8 @@ class SUWindow(QMainWindow):
                 self.p_window = ui_workplace.WPWindow(token, self.siw, self.login_LineEdit.text())
                 self.p_window.show()
                 self.hide()
+        else:
+            show_warning('Wrong data!', 'Check the correctness of the data you entered.')
 
         #     if request[0]:
         #         code = mailing.send_mail(
