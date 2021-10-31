@@ -109,7 +109,8 @@ class WPWindow(QMainWindow):
                     self.fill_table()
 
     def add_folder(self):
-        path_name = QFileDialog.getExistingDirectory(self, 'Choose the folder to add')
+        path_name = QFileDialog.getExistingDirectory(self, 'Choose the folder to add',
+                                                     options=QtWidgets.QFileDialog.DontUseNativeDialog)
         if path_name:
             version, flag = QInputDialog.getText(
                 self,
@@ -200,10 +201,10 @@ class WPWindow(QMainWindow):
                     token=self.token
             ):
                 if make_actual(
-                    login=self.login,
-                    path=self.folders_tableWidget.item(row, 0).text(),
-                    version=self.folders_tableWidget.item(row, 1).text(),
-                    token=self.token
+                        login=self.login,
+                        path=self.folders_tableWidget.item(row, 0).text(),
+                        version=self.folders_tableWidget.item(row, 1).text(),
+                        token=self.token
                 ):
                     self.fill_table()
 

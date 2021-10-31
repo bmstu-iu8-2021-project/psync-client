@@ -1,3 +1,4 @@
+import shutil
 import requests
 import os
 import zipfile
@@ -65,26 +66,6 @@ def add_folder(login, path, version, token):
             show_warning('Conflict of versions!',
                          'Version with this name for this folder is already exist!')
         else:
-            # # создаем архив
-            # zip_name = '_'.join([login, path[path.rfind('/') + 1:], version]) + '.zip'
-            # zip_folder = zipfile.ZipFile(zip_name, 'w')
-            # for root, dirs, files in os.walk(path):
-            #     for file in files:
-            #         zip_folder.write(os.path.join(root, file))
-            # zip_folder.close()
-            #
-            # # отправляем архив
-            # request = requests.get(
-            #     f'{PROTOCOL}://{IP}:{PORT}/upload_folder/',
-            #     files={
-            #         'file': (zip_name, open(zip_name, 'rb'))
-            #     },
-            #     headers={'Authorization': token},
-            # )
-            #
-            # if check_request(request):
-            #     # удаляем архив
-            #     os.remove(zip_name)
             if upload_folder(
                     login=login,
                     path=path,
@@ -103,16 +84,16 @@ def add_folder(login, path, version, token):
 
 def update_folder(login, path, version, token, is_actual=False):
     if delete_version(
-        login=login,
-        path=path,
-        version=version,
-        token=token
-    ):
-        if upload_folder(
             login=login,
             path=path,
             version=version,
             token=token
+    ):
+        if upload_folder(
+                login=login,
+                path=path,
+                version=version,
+                token=token
         ):
             data = get_json(get_files(path))
             data['login'] = login
@@ -288,3 +269,23 @@ def download_folder(login, path, version, token):
         },
         headers=head
     )
+    if check_request(request):
+        for file in os.listdir(path):
+            if os.path.isdir(os.path.join(path, file)):
+                shutil.rmtree(os.path.join(path, file))
+            else:
+                os.remove(os.path.join(path, file))
+
+        archive_path = os.path.join(path, 'archive.zip')
+        archive = open(archive_path, 'wb')
+        archive.write(request.content)
+        archive.close()
+
+        archive = zipfile.ZipFile(archive_path, 'r')
+        for file in archive.namelist():
+            if os.path.basename(file):
+                archive.extract(file, '/')
+        archive.close()
+        os.remove(archive_path)
+        return True
+    return False
