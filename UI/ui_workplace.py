@@ -6,6 +6,7 @@ from PyQt5.QtGui import QIcon
 from UI import ui_about, create_menu, ui_change_password, ui_change_email, ui_to_change
 from UI_functional.workplace import add_folder, update_folder, delete_version, delete_user, get_folders, make_actual
 from UI_functional.workplace import check_actuality, download_folder
+from connection.sockets import join_room, leave_room
 
 
 class WPWindow(QMainWindow):
@@ -64,6 +65,7 @@ class WPWindow(QMainWindow):
         self.folders_tableWidget = QTableWidget(self)
         self.create_table()
 
+        join_room(self.login)
         create_menu.du_menu(self)
 
     def create_table(self):
@@ -257,5 +259,6 @@ class WPWindow(QMainWindow):
         self.siw.close()
 
     def closeEvent(self, event):
+        leave_room(self.login)
         QtWidgets.QApplication.closeAllWindows()
         self.siw.show()
