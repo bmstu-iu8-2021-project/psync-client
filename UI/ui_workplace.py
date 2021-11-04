@@ -2,12 +2,11 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QInputDialog, QFileDialog, QAbstractItemView, QTableWidget, \
     QTableWidgetItem
 from PyQt5.QtGui import QIcon
-from threading import Thread
 
 from UI import ui_about, create_menu, ui_change_password, ui_change_email, ui_to_change
 from UI_functional.workplace import add_folder, update_folder, delete_version, delete_user, get_folders, make_actual
-from UI_functional.workplace import check_actuality, download_folder
-from connection.sockets import join_room, leave_room
+from UI_functional.workplace import check_actuality, download_folder, synchronize
+from connection import sockets
 
 
 class WPWindow(QMainWindow):
@@ -62,13 +61,16 @@ class WPWindow(QMainWindow):
         self.sync_Button.setIcon(QIcon('icons/workplace/sync_folder.svg'))
         self.sync_Button.setIconSize(QtCore.QSize(30, 30))
         self.sync_Button.setToolTip('Synchronize chosen folder')
+        self.sync_Button.clicked.connect(self.synchronize)
 
         self.folders_tableWidget = QTableWidget(self)
         self.create_table()
 
-        # t = Thread(target=join_room, args=(self.login,))
-        # t.start()
-        join_room(self.login)
+        sockets.connect()
+        sockets.join_flag = True
+        sockets.leave_flag = True
+        sockets.join_room(self.login)
+
         create_menu.du_menu(self)
 
     def create_table(self):
@@ -213,7 +215,17 @@ class WPWindow(QMainWindow):
                     self.fill_table()
 
     def synchronize(self):
-        pass
+        user, flag = QInputDialog.getText(
+            self,
+            'Enter user`s name',
+            'Enter user name you want to synchronize with',
+        )
+        if flag:
+            synchronize(
+                login=self.login,
+                sync_to=user,
+                token=self.token
+            )
 
     @QtCore.pyqtSlot()
     def change_password(self):
@@ -261,8 +273,8 @@ class WPWindow(QMainWindow):
         self.siw.close()
 
     def closeEvent(self, event):
-        # t = Thread(target=leave_room, args=(self.login,))
-        # t.start()
-        leave_room(self.login)
+        sockets.leave_room(self.login)
+        sockets.join_flag = False
+        sockets.leave_flag = False
         QtWidgets.QApplication.closeAllWindows()
         self.siw.show()

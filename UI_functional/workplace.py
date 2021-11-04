@@ -291,3 +291,18 @@ def download_folder(login, path, version, token):
         os.remove(archive_path)
         return True
     return False
+
+
+def synchronize(login, sync_to, token):
+    head = {'Content-Type': 'application/json', 'Authorization': token}
+    request = requests.get(
+        f'{PROTOCOL}://{IP}:{PORT}/synchronize/',
+        params={
+            'login': login,
+            'sync_to': sync_to,
+            'room': 'users'
+        },
+        headers=head
+    )
+    if check_request(request):
+        print(request.content.decode('UTF-8'))
