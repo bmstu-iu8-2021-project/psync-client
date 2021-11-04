@@ -247,6 +247,7 @@ def update_actual_folder(login, path, token):
     )
     if check_request(request):
         version = request.content.decode('UTF-8')
+        # TODO: put in thread
         return update_folder(
             login=login,
             path=path,
@@ -257,6 +258,7 @@ def update_actual_folder(login, path, token):
     return False
 
 
+# TODO: put in in thread
 def download_folder(login, path, version, token):
     head = {'Content-Type': 'application/json', 'Authorization': token}
     request = requests.get(

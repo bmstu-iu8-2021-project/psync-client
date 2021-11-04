@@ -2,6 +2,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QInputDialog, QFileDialog, QAbstractItemView, QTableWidget, \
     QTableWidgetItem
 from PyQt5.QtGui import QIcon
+from threading import Thread
 
 from UI import ui_about, create_menu, ui_change_password, ui_change_email, ui_to_change
 from UI_functional.workplace import add_folder, update_folder, delete_version, delete_user, get_folders, make_actual
@@ -65,6 +66,8 @@ class WPWindow(QMainWindow):
         self.folders_tableWidget = QTableWidget(self)
         self.create_table()
 
+        # t = Thread(target=join_room, args=(self.login,))
+        # t.start()
         join_room(self.login)
         create_menu.du_menu(self)
 
@@ -75,7 +78,6 @@ class WPWindow(QMainWindow):
         self.folders_tableWidget.setGeometry(
             QtCore.QRect(10, 52, 510, self.folders_tableWidget.verticalHeader().height() * (rows + 1) + 15))
         self.folders_tableWidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        # self.folders_tableWidget.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         self.folders_tableWidget.setRowCount(rows)
         self.folders_tableWidget.setColumnCount(columns)
         self.folders_tableWidget.setHorizontalHeaderLabels(('Folder', 'Version', 'Actual for'))
@@ -259,6 +261,8 @@ class WPWindow(QMainWindow):
         self.siw.close()
 
     def closeEvent(self, event):
+        # t = Thread(target=leave_room, args=(self.login,))
+        # t.start()
         leave_room(self.login)
         QtWidgets.QApplication.closeAllWindows()
         self.siw.show()
