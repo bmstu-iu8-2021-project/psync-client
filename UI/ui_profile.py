@@ -208,7 +208,8 @@ class PWindow(QMainWindow):
                             break
                         else:
                             call_ui.show_warning('Error!',
-                                                 f'An error occurred while communicating with the server. Error code: {request.status_code}',
+                                                 f'An error occurred while communicating with the server. Error code: '
+                                                 f'{request.status_code}',
                                                  'Critical')
                 else:
                     break

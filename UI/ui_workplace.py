@@ -2,6 +2,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QInputDialog, QFileDialog, QAbstractItemView, QTableWidget, \
     QTableWidgetItem
 from PyQt5.QtGui import QIcon
+from threading import current_thread
 
 from UI import ui_about, create_menu, ui_change_password, ui_change_email, ui_to_change
 from UI_functional.workplace import add_folder, update_folder, delete_version, delete_user, get_folders, make_actual
@@ -15,6 +16,9 @@ class WPWindow(QMainWindow):
         self.token = token
         self.siw = siw
         self.login = login
+        self.socket = sockets.Socket(self.login)
+        self.socket.join_room()
+        self.socket.signal.connect(self.notifications)
 
         self.setWindowTitle('SyncGad • Workplace')
         self.setGeometry(600, 300, 580, 385)
@@ -66,12 +70,25 @@ class WPWindow(QMainWindow):
         self.folders_tableWidget = QTableWidget(self)
         self.create_table()
 
-        sockets.connect()
-        sockets.join_flag = True
-        sockets.leave_flag = True
-        sockets.join_room(self.login)
+        # sockets.connect()
+        # sockets.join_flag = True
+        # sockets.leave_flag = True
+        # sockets.join_room(self.login, self)
 
         create_menu.du_menu(self)
+
+    # @property
+    # def message(self):
+    #     print('1', current_thread())
+    #     return self._message
+    #
+    # @message.setter
+    # def message(self, data):
+    #     self._message = data
+    #     print('2', self.message, current_thread())
+
+    def notifications(self, text):
+        print('c', current_thread(), text)
 
     def create_table(self):
         columns = 3
@@ -215,17 +232,20 @@ class WPWindow(QMainWindow):
                     self.fill_table()
 
     def synchronize(self):
-        user, flag = QInputDialog.getText(
-            self,
-            'Enter user`s name',
-            'Enter user name you want to synchronize with',
-        )
-        if flag:
-            synchronize(
-                login=self.login,
-                sync_to=user,
-                token=self.token
+        row = self.folders_tableWidget.currentRow()
+        if not (self.folders_tableWidget.item(row, 0) is None):
+            user, flag = QInputDialog.getText(
+                self,
+                'Enter user`s name',
+                'Enter user name you want to synchronize with',
             )
+            if flag:
+                synchronize(
+                    login=self.login,
+                    folder_path=self.folders_tableWidget.item(row, 0).text(),
+                    sync_to=user,
+                    token=self.token
+                )
 
     @QtCore.pyqtSlot()
     def change_password(self):
@@ -273,8 +293,9 @@ class WPWindow(QMainWindow):
         self.siw.close()
 
     def closeEvent(self, event):
-        sockets.leave_room(self.login)
-        sockets.join_flag = False
-        sockets.leave_flag = False
+        # sockets.leave_room(self.login)
+        # sockets.join_flag = False
+        # sockets.leave_flag = False
+        self.socket.leave_room()
         QtWidgets.QApplication.closeAllWindows()
         self.siw.show()
