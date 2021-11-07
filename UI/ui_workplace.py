@@ -2,11 +2,11 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QInputDialog, QFileDialog, QAbstractItemView, QTableWidget, \
     QTableWidgetItem
 from PyQt5.QtGui import QIcon
-from threading import current_thread
 
 from UI import ui_about, create_menu, ui_change_password, ui_change_email, ui_to_change
 from UI_functional.workplace import add_folder, update_folder, delete_version, delete_user, get_folders, make_actual
 from UI_functional.workplace import check_actuality, download_folder, synchronize
+from UI.call_ui import accept_synchronize, show_warning, notification
 from connection import sockets
 
 
@@ -70,25 +70,20 @@ class WPWindow(QMainWindow):
         self.folders_tableWidget = QTableWidget(self)
         self.create_table()
 
-        # sockets.connect()
-        # sockets.join_flag = True
-        # sockets.leave_flag = True
-        # sockets.join_room(self.login, self)
-
         create_menu.du_menu(self)
 
-    # @property
-    # def message(self):
-    #     print('1', current_thread())
-    #     return self._message
-    #
-    # @message.setter
-    # def message(self, data):
-    #     self._message = data
-    #     print('2', self.message, current_thread())
-
-    def notifications(self, text):
-        print('c', current_thread(), text)
+    def notifications(self, data):
+        if data['type'] == 'request_to_synchronize':
+            choice = accept_synchronize('Accepting',
+                                        f"User {data['current_user']} want to synchronize\n {data['folder']} with you")
+            self.socket.send_answer({'current_user': self.login, 'other_user': data['current_user'], 'choice': choice})
+        elif data['type'] == 'answer':
+            text = f"User {data['current_user']} %s your request to synchronize"
+            if data['choice']:
+                text = text % 'accepted'
+            else:
+                text = text % 'denied'
+            notification('Answer', text)
 
     def create_table(self):
         columns = 3
@@ -198,7 +193,6 @@ class WPWindow(QMainWindow):
         # проверяем, свежие ли данные в акутальных версиях
         to_change = check_actuality(self.login, data, self.token)
         if not (to_change is None):
-            # self.setWindowModality(QtCore.Qt.ApplicationModal)
             self.tc_window = ui_to_change.TCWindow(self.login, self.token, to_change, self)
             self.tc_window.show()
             self.setEnabled(False)
@@ -234,16 +228,19 @@ class WPWindow(QMainWindow):
     def synchronize(self):
         row = self.folders_tableWidget.currentRow()
         if not (self.folders_tableWidget.item(row, 0) is None):
-            user, flag = QInputDialog.getText(
+            other_user, flag = QInputDialog.getText(
                 self,
                 'Enter user`s name',
                 'Enter user name you want to synchronize with',
             )
             if flag:
+                if other_user == self.login:
+                    show_warning('Impossible operation', 'You can`t synchronize folder with yourself')
+                    return
                 synchronize(
-                    login=self.login,
+                    current_user=self.login,
                     folder_path=self.folders_tableWidget.item(row, 0).text(),
-                    sync_to=user,
+                    other_user=other_user,
                     token=self.token
                 )
 
@@ -293,9 +290,6 @@ class WPWindow(QMainWindow):
         self.siw.close()
 
     def closeEvent(self, event):
-        # sockets.leave_room(self.login)
-        # sockets.join_flag = False
-        # sockets.leave_flag = False
         self.socket.leave_room()
         QtWidgets.QApplication.closeAllWindows()
         self.siw.show()

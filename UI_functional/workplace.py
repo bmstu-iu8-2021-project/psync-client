@@ -293,17 +293,19 @@ def download_folder(login, path, version, token):
     return False
 
 
-def synchronize(login, folder_path, sync_to, token):
+def synchronize(current_user, folder_path, other_user, token):
     head = {'Content-Type': 'application/json', 'Authorization': token}
     request = requests.get(
         f'{PROTOCOL}://{IP}:{PORT}/synchronize/',
         params={
-            'login': login,
+            'current_user': current_user,
             'folder_path': folder_path,
-            'sync_to': sync_to,
+            'other_user': other_user,
             'room': 'users'
         },
         headers=head
     )
     if check_request(request):
-        print(request.content.decode('UTF-8'))
+        if request.content.decode('UTF-8') == 'False':
+            show_warning('Unable to connect', f'User {other_user} if offline, unable to send request')
+        return
