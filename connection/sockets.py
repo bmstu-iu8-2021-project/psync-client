@@ -32,13 +32,11 @@ class Socket(QThread):
         if type(args) is dict:
             if args['other_user'] != self.__login:
                 return
-            print(args)
             self.signal.emit(args)
 
     def send_answer(self, args):
-        self.__socketIO.emit('send_answer',
-                             {'current_user': args['current_user'], 'other_user': args['other_user'],
-                              'choice': args['choice'], 'room': 'users'})
+        args['room'] = 'users'
+        self.__socketIO.emit('send_answer', args)
 
     def leave_room(self):
         self.join_flag = False

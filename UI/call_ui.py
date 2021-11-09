@@ -13,16 +13,6 @@ def show_warning(title, text, flag='Warning'):
     error.exec_()
 
 
-def accept_synchronize(title, text):
-    admitting = QMessageBox()
-    admitting.setWindowTitle(title)
-    admitting.setText(text)
-    admitting.setIcon(QMessageBox.Information)
-    admitting.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-    admitting.setDefaultButton(QMessageBox.Yes)
-    return admitting.exec_() == QMessageBox.Yes
-
-
 def notification(title, text):
     note = QMessageBox()
     note.setWindowTitle(title)

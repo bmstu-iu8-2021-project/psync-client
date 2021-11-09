@@ -293,13 +293,14 @@ def download_folder(login, path, version, token):
     return False
 
 
-def synchronize(current_user, folder_path, other_user, token):
+def synchronize(current_user, current_folder, other_user, token):
     head = {'Content-Type': 'application/json', 'Authorization': token}
     request = requests.get(
         f'{PROTOCOL}://{IP}:{PORT}/synchronize/',
         params={
             'current_user': current_user,
-            'folder_path': folder_path,
+            'current_folder': current_folder,
+            'current_mac': get_mac(),
             'other_user': other_user,
             'room': 'users'
         },

@@ -3,10 +3,10 @@ from PyQt5.QtWidgets import QMainWindow, QMessageBox, QInputDialog, QFileDialog,
     QTableWidgetItem
 from PyQt5.QtGui import QIcon
 
-from UI import ui_about, create_menu, ui_change_password, ui_change_email, ui_to_change
+from UI import ui_about, create_menu, ui_change_password, ui_change_email, ui_to_change, ui_accept_synchronize
 from UI_functional.workplace import add_folder, update_folder, delete_version, delete_user, get_folders, make_actual
 from UI_functional.workplace import check_actuality, download_folder, synchronize
-from UI.call_ui import accept_synchronize, show_warning, notification
+from UI.call_ui import show_warning, notification
 from connection import sockets
 
 
@@ -74,12 +74,12 @@ class WPWindow(QMainWindow):
 
     def notifications(self, data):
         if data['type'] == 'request_to_synchronize':
-            choice = accept_synchronize('Accepting',
-                                        f"User {data['current_user']} want to synchronize\n {data['folder']} with you")
-            self.socket.send_answer({'current_user': self.login, 'other_user': data['current_user'], 'choice': choice})
+            self.as_window = ui_accept_synchronize.ASWindow(data, self)
+            self.as_window.show()
         elif data['type'] == 'answer':
             text = f"User {data['current_user']} %s your request to synchronize"
             if data['choice']:
+                # TODO: user have to choose his folder
                 text = text % 'accepted'
             else:
                 text = text % 'denied'
@@ -228,21 +228,26 @@ class WPWindow(QMainWindow):
     def synchronize(self):
         row = self.folders_tableWidget.currentRow()
         if not (self.folders_tableWidget.item(row, 0) is None):
-            other_user, flag = QInputDialog.getText(
-                self,
-                'Enter user`s name',
-                'Enter user name you want to synchronize with',
-            )
-            if flag:
-                if other_user == self.login:
-                    show_warning('Impossible operation', 'You can`t synchronize folder with yourself')
-                    return
-                synchronize(
-                    current_user=self.login,
-                    folder_path=self.folders_tableWidget.item(row, 0).text(),
-                    other_user=other_user,
-                    token=self.token
+            check_font = QtGui.QFont()
+            check_font.setBold(True)
+            if self.folders_tableWidget.item(row, 0).font() == check_font:
+                other_user, flag = QInputDialog.getText(
+                    self,
+                    'Enter user`s name',
+                    'Enter user name you want to synchronize with',
                 )
+                if flag:
+                    if other_user == self.login:
+                        show_warning('Impossible operation', 'You can`t synchronize folder with yourself')
+                        return
+                    synchronize(
+                        current_user=self.login,
+                        current_folder=self.folders_tableWidget.item(row, 0).text(),
+                        other_user=other_user,
+                        token=self.token
+                    )
+            else:
+                show_warning('', 'no actual')
 
     @QtCore.pyqtSlot()
     def change_password(self):
