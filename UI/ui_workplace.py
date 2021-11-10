@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QMainWindow, QMessageBox, QInputDialog, QFileDialog,
 from PyQt5.QtGui import QIcon
 
 from UI import ui_about, create_menu, ui_change_password, ui_change_email, ui_to_change, ui_accept_synchronize
+from UI import ui_synchronized
 from UI_functional.workplace import add_folder, update_folder, delete_version, delete_user, get_folders, make_actual
 from UI_functional.workplace import check_actuality, download_folder, synchronize
 from UI.call_ui import show_warning, notification
@@ -114,7 +115,7 @@ class WPWindow(QMainWindow):
 
     def make_actual(self):
         row = self.folders_tableWidget.currentRow()
-        if not (self.folders_tableWidget.item(row, 0) is None):
+        if self.folders_tableWidget.item(row, 0) is not None:
             font = QtGui.QFont()
             font.setBold(True)
             if not (self.folders_tableWidget.item(row, 0).font() == font):
@@ -146,7 +147,7 @@ class WPWindow(QMainWindow):
 
     def delete_version(self):
         row = self.folders_tableWidget.currentRow()
-        if not (self.folders_tableWidget.item(row, 0) is None):
+        if self.folders_tableWidget.item(row, 0) is not None:
             if delete_version(
                     login=self.login,
                     path=self.folders_tableWidget.item(row, 0).text(),
@@ -182,9 +183,10 @@ class WPWindow(QMainWindow):
 
         # добавляем подсказки к ячейкам первого столбца
         for i in range(self.folders_tableWidget.rowCount()):
-            if not self.folders_tableWidget.item(i, 0) is None:
+            if self.folders_tableWidget.item(i, 0) is not None:
                 self.folders_tableWidget.item(i, 0).setToolTip(self.folders_tableWidget.item(i, 0).text())
 
+    # TODO: РАЗОБРАТЬСЯ!
     def check_actuality(self):
         data = get_folders(
             login=self.login,
@@ -192,14 +194,14 @@ class WPWindow(QMainWindow):
         )
         # проверяем, свежие ли данные в акутальных версиях
         to_change = check_actuality(self.login, data, self.token)
-        if not (to_change is None):
+        if to_change is not None:
             self.tc_window = ui_to_change.TCWindow(self.login, self.token, to_change, self)
             self.tc_window.show()
             self.setEnabled(False)
 
     def update_version(self):
         row = self.folders_tableWidget.currentRow()
-        if not (self.folders_tableWidget.item(row, 0) is None):
+        if self.folders_tableWidget.item(row, 0) is not None:
             if update_folder(
                     login=self.login,
                     path=self.folders_tableWidget.item(row, 0).text(),
@@ -210,7 +212,7 @@ class WPWindow(QMainWindow):
 
     def download_version(self):
         row = self.folders_tableWidget.currentRow()
-        if not (self.folders_tableWidget.item(row, 0) is None):
+        if self.folders_tableWidget.item(row, 0) is not None:
             if download_folder(
                     login=self.login,
                     path=self.folders_tableWidget.item(row, 0).text(),
@@ -227,7 +229,7 @@ class WPWindow(QMainWindow):
 
     def synchronize(self):
         row = self.folders_tableWidget.currentRow()
-        if not (self.folders_tableWidget.item(row, 0) is None):
+        if self.folders_tableWidget.item(row, 0) is not None:
             check_font = QtGui.QFont()
             check_font.setBold(True)
             if self.folders_tableWidget.item(row, 0).font() == check_font:
@@ -293,6 +295,11 @@ class WPWindow(QMainWindow):
     def exit(self):
         self.close()
         self.siw.close()
+
+    @QtCore.pyqtSlot()
+    def show_synchronized(self):
+        self.s_window = ui_synchronized.SWindow(self)
+        self.s_window.show()
 
     def closeEvent(self, event):
         self.socket.leave_room()

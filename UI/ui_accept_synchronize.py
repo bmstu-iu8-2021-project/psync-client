@@ -22,31 +22,31 @@ class ASWindow(QMainWindow):
         font.setPointSize(12)
 
         self.descLabel = QtWidgets.QLabel(self)
-        self.descLabel.setGeometry(3, 3, 400, 180)
+        self.descLabel.setGeometry(10, 3, 390, 180)
         self.descLabel.setFont(font)
         self.descLabel.setText(f"<h4 style='text-align: justify;'>User <span style='color: #999999;'>"
                                f"<em>{self.__text['current_user']}</em></span> want to synchronize his local "
                                f"folder<br> <span style='color: #999999;'><em>{self.__text['current_folder']}"
                                f"</em></span> with you.</h4><p style='text-align: justify;'>To accept the request, "
                                f"select the appropriate folder<br> from the list of relevant ones below. Now and in"
-                               f"<br> the future, during authorization, the contents of your<br> folder will be "
-                               f"automatically updated according to the<br> contents of the user`s folder <strong>"
-                               f"{self.__text['current_user']}</strong>. If the selected<br> folder is no longer "
-                               f"relevant, the connection with<br> <strong>{self.__text['current_user']}"
-                               f"</strong> will be terminated</p>")
+                               f"<br> the future, during authorization, the contents of<br> your folder will be "
+                               f"automatically updated according<br> to the contents of the user`s folder <strong>"
+                               f"{self.__text['current_user']}</strong>. If the<br> selected folder is no longer "
+                               f"relevant, the connection<br> with <strong>{self.__text['current_user']}"
+                               f"</strong> will be terminated.</p>")
 
         self.acceptButton = QtWidgets.QPushButton(self)
-        self.acceptButton.setGeometry(252, 223, 70, 30)
+        self.acceptButton.setGeometry(240, 223, 70, 30)
         self.acceptButton.setText('Accept')
         self.acceptButton.clicked.connect(self.accept)
 
         self.denyButton = QtWidgets.QPushButton(self)
-        self.denyButton.setGeometry(327, 223, 70, 30)
+        self.denyButton.setGeometry(320, 223, 70, 30)
         self.denyButton.setText('Deny')
         self.denyButton.clicked.connect(self.deny)
 
         self.listCBox = QtWidgets.QComboBox(self)
-        self.listCBox.setGeometry(3, 188, 394, 25)
+        self.listCBox.setGeometry(10, 188, 380, 25)
         check_font = QtGui.QFont()
         check_font.setBold(True)
         for i in range(self.__wpw.folders_tableWidget.rowCount()):
