@@ -3,7 +3,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAbstractItemView, QTableWidget, QTableWidgetItem, QCheckBox
 from PyQt5.QtWidgets import QMainWindow
 
-from UI_functional.workplace import update_actual_folder, make_no_actual
+from UI_functional.workplace import update_actual_folder, make_no_actual, get_folders
 
 
 class TCWindow(QMainWindow):
@@ -13,9 +13,10 @@ class TCWindow(QMainWindow):
         self.token = token
         self.folders = folders
         self.wpw = wpw
+        self.flag = False
 
+        self.wpw.setEnabled(False)
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
-        # self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
 
         self.setWindowTitle('SyncGad • Update folders')
         self.setGeometry(650, 250, 470, 381)
@@ -52,7 +53,7 @@ class TCWindow(QMainWindow):
         self.fill_table()
 
     def fill_table(self):
-        for i in range(len(self.folders['folder_name'])):
+        for i in range(len(self.folders)):
             check_box = QCheckBox()
             check_box.setChecked(True)
             check_box.setStyleSheet('''
@@ -61,12 +62,12 @@ class TCWindow(QMainWindow):
                 };
             ''')
             self.to_update_tableWidget.setCellWidget(i, 0, check_box)
-            self.to_update_tableWidget.setItem(i, 1, QTableWidgetItem(str(self.folders['folder_name'][i])))
+            self.to_update_tableWidget.setItem(i, 1, QTableWidgetItem(self.folders[i]))
             self.to_update_tableWidget.item(i, 1).setToolTip(self.to_update_tableWidget.item(i, 1).text())
 
     def confirm(self):
         for i in range(self.to_update_tableWidget.rowCount()):
-            if not (self.to_update_tableWidget.item(i, 1) is None):
+            if self.to_update_tableWidget.item(i, 1) is not None:
                 check_bow = self.to_update_tableWidget.cellWidget(i, 0)
                 if check_bow.isChecked():
                     update_actual_folder(
@@ -80,8 +81,24 @@ class TCWindow(QMainWindow):
                         path=self.to_update_tableWidget.item(i, 1).text(),
                         token=self.token
                     )
-        self.wpw.fill_table()
+        self.wpw.fill_table(get_folders(
+            login=self.login,
+            token=self.token
+        ))
+        self.flag = True
         self.close()
 
     def closeEvent(self, event):
         self.wpw.setEnabled(True)
+        if not self.flag:
+            for i in range(self.to_update_tableWidget.rowCount()):
+                if self.to_update_tableWidget.item(i, 1) is not None:
+                    make_no_actual(
+                        login=self.login,
+                        path=self.to_update_tableWidget.item(i, 1).text(),
+                        token=self.token
+                    )
+            self.wpw.fill_table(get_folders(
+                login=self.login,
+                token=self.token
+            ))

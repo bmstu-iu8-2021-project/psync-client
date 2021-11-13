@@ -5,7 +5,7 @@ from PyQt5.QtCore import QThread, pyqtSignal
 from data_processing.constants import PROTOCOL, IP, PORT
 
 
-def event_handler(function):
+def separate_thread(function):
     def wrapper(*arg):
         return Thread(name=function.__name__, target=function, args=(*arg,)).start()
 
@@ -22,7 +22,7 @@ class Socket(QThread):
         self.__login = login
         self.join_flag = True
 
-    @event_handler
+    @separate_thread
     def join_room(self):
         self.__socketIO.emit('join_room', {'current_user': self.__login, 'room': 'users'})
         while self.join_flag:

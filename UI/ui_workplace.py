@@ -1,12 +1,14 @@
+import threading
+
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QInputDialog, QFileDialog, QAbstractItemView, QTableWidget, \
     QTableWidgetItem
 from PyQt5.QtGui import QIcon
 
 from UI import ui_about, create_menu, ui_change_password, ui_change_email, ui_to_change, ui_accept_synchronize
-from UI import ui_synchronized
+from UI import ui_synchronized, ui_to_synchronize
 from UI_functional.workplace import add_folder, update_folder, delete_version, delete_user, get_folders, make_actual
-from UI_functional.workplace import check_actuality, download_folder, synchronize
+from UI_functional.workplace import check_actuality, download_folder, synchronize, check_synchronized, get_synchronized
 from UI.call_ui import show_warning, notification
 from connection import sockets
 
@@ -18,6 +20,7 @@ class WPWindow(QMainWindow):
         self.siw = siw
         self.login = login
         self.socket = sockets.Socket(self.login)
+
         self.socket.join_room()
         self.socket.signal.connect(self.notifications)
 
@@ -70,6 +73,7 @@ class WPWindow(QMainWindow):
 
         self.folders_tableWidget = QTableWidget(self)
         self.create_table()
+        self.check_synchronized()
 
         create_menu.du_menu(self)
 
@@ -80,7 +84,6 @@ class WPWindow(QMainWindow):
         elif data['type'] == 'answer':
             text = f"User {data['current_user']} %s your request to synchronize"
             if data['choice']:
-                # TODO: user have to choose his folder
                 text = text % 'accepted'
             else:
                 text = text % 'denied'
@@ -110,8 +113,28 @@ class WPWindow(QMainWindow):
 
         self.folders_tableWidget.doubleClicked.connect(self.make_actual)
 
-        self.fill_table()
-        self.check_actuality()
+        data = get_folders(
+            login=self.login,
+            token=self.token
+        )
+        self.fill_table(data)
+        self.check_actuality(data)
+
+    def check_synchronized(self):
+        to_sync = check_synchronized(
+            login=self.login,
+            token=self.token
+        )
+        if to_sync is not None:
+            if len(to_sync['items']) != 0:
+                self.tswindow = ui_synchronized.SWindow(
+                    login=self.login,
+                    mode=False,
+                    data=to_sync,
+                    wpw=self,
+                    token=self.token
+                )
+                self.tswindow.show()
 
     def make_actual(self):
         row = self.folders_tableWidget.currentRow()
@@ -125,7 +148,10 @@ class WPWindow(QMainWindow):
                         version=self.folders_tableWidget.item(row, 1).text(),
                         token=self.token
                 ):
-                    self.fill_table()
+                    self.fill_table(get_folders(
+                        login=self.login,
+                        token=self.token
+                    ))
 
     def add_folder(self):
         path_name = QFileDialog.getExistingDirectory(self, 'Choose the folder to add',
@@ -143,7 +169,10 @@ class WPWindow(QMainWindow):
                         version=version,
                         token=self.token
                 ):
-                    self.fill_table()
+                    self.fill_table(get_folders(
+                        login=self.login,
+                        token=self.token
+                    ))
 
     def delete_version(self):
         row = self.folders_tableWidget.currentRow()
@@ -154,50 +183,47 @@ class WPWindow(QMainWindow):
                     version=self.folders_tableWidget.item(row, 1).text(),
                     token=self.token
             ):
-                self.fill_table()
+                self.fill_table(get_folders(
+                        login=self.login,
+                        token=self.token
+                    ))
 
     # заполнение таблицы актуальными данными (старые стираются)
-    def fill_table(self):
-        self.folders_tableWidget.setRowCount(10)
-        data = get_folders(
-            login=self.login,
-            token=self.token
-        )
+    def fill_table(self, json_data):
         self.folders_tableWidget.setRowCount(0)
         self.folders_tableWidget.setRowCount(10)
-        if data.keys():
-            data_count = len(list(data.values())[0])
-            if data_count <= 10:
+        if json_data is not None:
+            count = len(json_data)
+            if count <= 10:
                 self.folders_tableWidget.setColumnWidth(0, 278)
             else:
-                self.folders_tableWidget.setRowCount(data_count)
+                self.folders_tableWidget.setRowCount(count)
                 self.folders_tableWidget.setColumnWidth(0, 264)
             font = QtGui.QFont()
             font.setBold(True)
-            for i in range(len(data.keys()) - 1):
-                key = list(data.keys())[i]
-                for j in range(len(data[key])):
-                    self.folders_tableWidget.setItem(j, i, QTableWidgetItem(str(data[key][j])))
-                    if data['is_actual'][j] == 'True':
-                        self.folders_tableWidget.item(j, i).setFont(font)
+            for i in range(count):
+                keys = list(json_data[i].keys())
+                for j in keys[:-1]:
+                    z = keys.index(j)
+                    self.folders_tableWidget.setItem(i, z, QTableWidgetItem(json_data[i][j]))
+                    if json_data[i][keys[-1]]:
+                        self.folders_tableWidget.item(i, z).setFont(font)
 
         # добавляем подсказки к ячейкам первого столбца
-        for i in range(self.folders_tableWidget.rowCount()):
-            if self.folders_tableWidget.item(i, 0) is not None:
+            for i in range(count):
                 self.folders_tableWidget.item(i, 0).setToolTip(self.folders_tableWidget.item(i, 0).text())
+                self.folders_tableWidget.item(i, 1).setToolTip(self.folders_tableWidget.item(i, 1).text())
 
-    # TODO: РАЗОБРАТЬСЯ!
-    def check_actuality(self):
-        data = get_folders(
+    def check_actuality(self, json_data):
+        # проверяем, свежие ли данные в акутальных версиях
+        to_change = check_actuality(
             login=self.login,
+            json_data=json_data,
             token=self.token
         )
-        # проверяем, свежие ли данные в акутальных версиях
-        to_change = check_actuality(self.login, data, self.token)
         if to_change is not None:
-            self.tc_window = ui_to_change.TCWindow(self.login, self.token, to_change, self)
+            self.tc_window = ui_to_change.TCWindow(self.login, self.token, to_change['folder'], self)
             self.tc_window.show()
-            self.setEnabled(False)
 
     def update_version(self):
         row = self.folders_tableWidget.currentRow()
@@ -208,7 +234,10 @@ class WPWindow(QMainWindow):
                     version=self.folders_tableWidget.item(row, 1).text(),
                     token=self.token
             ):
-                self.fill_table()
+                self.fill_table(get_folders(
+                        login=self.login,
+                        token=self.token
+                    ))
 
     def download_version(self):
         row = self.folders_tableWidget.currentRow()
@@ -225,7 +254,10 @@ class WPWindow(QMainWindow):
                         version=self.folders_tableWidget.item(row, 1).text(),
                         token=self.token
                 ):
-                    self.fill_table()
+                    self.fill_table(get_folders(
+                        login=self.login,
+                        token=self.token
+                    ))
 
     def synchronize(self):
         row = self.folders_tableWidget.currentRow()
@@ -249,7 +281,7 @@ class WPWindow(QMainWindow):
                         token=self.token
                     )
             else:
-                show_warning('', 'no actual')
+                show_warning('Invalid operation', 'Folder you want to synchronize should be actual')
 
     @QtCore.pyqtSlot()
     def change_password(self):
@@ -298,7 +330,16 @@ class WPWindow(QMainWindow):
 
     @QtCore.pyqtSlot()
     def show_synchronized(self):
-        self.s_window = ui_synchronized.SWindow(self)
+        self.s_window = ui_synchronized.SWindow(
+            login=self.login,
+            mode=True,
+            wpw=self,
+            data=get_synchronized(
+                login=self.login,
+                token=self.token
+            ),
+            token=self.token
+        )
         self.s_window.show()
 
     def closeEvent(self, event):

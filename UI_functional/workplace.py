@@ -83,32 +83,51 @@ def add_folder(login, path, version, token):
 
 
 def update_folder(login, path, version, token, is_actual=False):
-    if delete_version(
+    # if delete_version(
+    #         login=login,
+    #         path=path,
+    #         version=version,
+    #         token=token
+    # ):
+    #     if upload_folder(
+    #             login=login,
+    #             path=path,
+    #             version=version,
+    #             token=token
+    #     ):
+    #         data = get_json(get_files(path))
+    #         data['login'] = login
+    #         data['mac'] = get_mac()
+    #         data['path_file'] = path
+    #         data['new_version'] = version
+    #         data['is_actual'] = is_actual
+    #
+    #         head = {'Content-Type': 'application/json', 'Authorization': token}
+    #         request = requests.get(
+    #             f'{PROTOCOL}://{IP}:{PORT}/add_version/',
+    #             data=json.dumps(data),
+    #             headers=head
+    #         )
+    #         return check_request(request)
+    # return False
+    if upload_folder(
             login=login,
             path=path,
             version=version,
             token=token
     ):
-        if upload_folder(
-                login=login,
-                path=path,
-                version=version,
-                token=token
-        ):
-            data = get_json(get_files(path))
-            data['login'] = login
-            data['mac'] = get_mac()
-            data['path_file'] = path
-            data['new_version'] = version
-            data['is_actual'] = is_actual
-
-            head = {'Content-Type': 'application/json', 'Authorization': token}
-            request = requests.get(
-                f'{PROTOCOL}://{IP}:{PORT}/add_version/',
-                data=json.dumps(data),
-                headers=head
-            )
-            return check_request(request)
+        head = {'Content-Type': 'application/json', 'Authorization': token}
+        request = requests.get(
+            f'{PROTOCOL}://{IP}:{PORT}/update_version/',
+            params={
+                'login': login,
+                'mac': get_mac(),
+                'path_file': path,
+                'version': version
+            },
+            headers=head
+        )
+        return check_request(request)
     return False
 
 
@@ -176,7 +195,7 @@ def get_folders(login, token):
         headers=head
     )
     if check_request(request):
-        return json.loads(request.content.decode('UTF-8'))
+        return request.json()
     return None
 
 
@@ -195,28 +214,28 @@ def make_actual(login, path, version, token):
     return check_request(request)
 
 
-def check_actuality(login, data, token):
-    if data.keys():
-        to_check = {'zip_name': [], 'folder_name': [], 'content': []}
-        for row in range(len(data['is_actual'])):
-            if data['is_actual'][row] == 'True':
-                path = data['folder'][row]
-                version = data['version'][row]
-                to_check['zip_name'].append('_'.join([login, path[path.rfind('/') + 1:], version]) + '.zip')
-                to_check['folder_name'].append(path)
-                to_check['content'].append(get_json(get_files(data['folder'][row]))['files'])
-        output = json.dumps(to_check)
+def check_actuality(login, json_data, token):
+    if json_data is not None:
+        to_check = {'login': login, 'mac': get_mac(), 'folder': []}
+        json_data = [item for item in json_data if item['is_actual']]
+        for item in json_data:
+            to_check_item = {
+                'name': item['folder'].replace('\\', '/'),
+                'files': get_json(get_files(item['folder']))['files']
+            }
+            to_check['folder'].append(to_check_item)
 
-        head = {'Content-Type': 'application/json', 'Authorization': token}
-        request = requests.get(
-            f'{PROTOCOL}://{IP}:{PORT}/check_actuality/',
-            data=output,
-            headers=head
-        )
-        if check_request(request):
-            to_change = json.loads(request.content.decode('UTF-8'))
-            if to_change['folder_name']:
-                return to_change
+        if len(to_check['folder']) > 0:
+            head = {'Content-Type': 'application/json', 'Authorization': token}
+            request = requests.get(
+                f'{PROTOCOL}://{IP}:{PORT}/check_actuality/',
+                data=json.dumps(to_check),
+                headers=head
+            )
+            if check_request(request):
+                to_change = request.json()
+                if len(to_change['folder']) > 0:
+                    return request.json()
     return None
 
 
@@ -308,5 +327,35 @@ def synchronize(current_user, current_folder, other_user, token):
     )
     if check_request(request):
         if request.content.decode('UTF-8') == 'False':
-            show_warning('Unable to connect', f'User {other_user} if offline, unable to send request')
+            show_warning('Unable to connect', f'User {other_user} is offline, unable to send request')
         return
+
+
+def check_synchronized(login, token):
+    head = {'Content-Type': 'application/json', 'Authorization': token}
+    request = requests.get(
+        f'{PROTOCOL}://{IP}:{PORT}/check_synchronized/',
+        params={
+            'login': login,
+            'mac': get_mac()
+        },
+        headers=head
+    )
+    if check_request(request):
+        return request.json()
+    return None
+
+
+def get_synchronized(login, token):
+    head = {'Content-Type': 'application/json', 'Authorization': token}
+    request = requests.get(
+        f'{PROTOCOL}://{IP}:{PORT}/get_synchronized/',
+        params={
+            'login': login,
+            'mac': get_mac()
+        },
+        headers=head
+    )
+    if check_request(request):
+        return request.json()
+    return None
