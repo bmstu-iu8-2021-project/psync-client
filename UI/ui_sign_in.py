@@ -10,7 +10,6 @@ from UI_functional.sign_in import auth
 class SIWindow(QMainWindow):
     def __init__(self):
         super(SIWindow, self).__init__()
-        self.token = ''
 
         self.setWindowTitle('SyncGad • Sign In')
         self.setGeometry(600, 300, 285, 160)
@@ -48,17 +47,15 @@ class SIWindow(QMainWindow):
         if login and password:
             token = auth(login, password)
             if json.loads(token)['token']:
-                self.token = token
                 self.password_LineEdit.setText('')
-                self.p_window = ui_workplace.WPWindow(self.token, self, login)
+                self.p_window = ui_workplace.WPWindow(login, self, token)
                 self.p_window.show()
                 self.hide()
             else:
-                self.password_LineEdit.setText('')
-                call_ui.show_warning('Wrong data!', 'The entered login or password is incorrect.')
+                call_ui.show_dialog('Wrong data!', 'The entered login or password is incorrect.')
         else:
-            self.password_LineEdit.setText('')
-            call_ui.show_warning('Wrong data!', 'The entered login or password is incorrect.')
+            call_ui.show_dialog('Wrong data!', 'The entered login or password is incorrect.')
+        self.password_LineEdit.setText('')
 
     def register(self):
         self.login_LineEdit.setText('')

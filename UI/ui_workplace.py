@@ -1,20 +1,18 @@
-import threading
-
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QInputDialog, QFileDialog, QAbstractItemView, QTableWidget, \
     QTableWidgetItem
 from PyQt5.QtGui import QIcon
 
-from UI import ui_about, create_menu, ui_change_password, ui_change_email, ui_to_change, ui_accept_synchronize
-from UI import ui_synchronized, ui_to_synchronize
+from UI import ui_about, create_menu, ui_change_password, ui_change_email, ui_to_update, ui_accept_synchronize
+from UI import ui_synchronized
 from UI_functional.workplace import add_folder, update_folder, delete_version, delete_user, get_folders, make_actual
 from UI_functional.workplace import check_actuality, download_folder, synchronize, check_synchronized, get_synchronized
-from UI.call_ui import show_warning, notification
+from UI.call_ui import show_dialog
 from connection import sockets
 
 
 class WPWindow(QMainWindow):
-    def __init__(self, token, siw, login):
+    def __init__(self, login, siw, token):
         super(WPWindow, self).__init__()
         self.token = token
         self.siw = siw
@@ -87,7 +85,7 @@ class WPWindow(QMainWindow):
                 text = text % 'accepted'
             else:
                 text = text % 'denied'
-            notification('Answer', text)
+            show_dialog('Answer', text, 2)
 
     def create_table(self):
         columns = 3
@@ -222,7 +220,7 @@ class WPWindow(QMainWindow):
             token=self.token
         )
         if to_change is not None:
-            self.tc_window = ui_to_change.TCWindow(self.login, self.token, to_change['folder'], self)
+            self.tc_window = ui_to_update.TUWindow(self.login, self.token, to_change['folder'], self)
             self.tc_window.show()
 
     def update_version(self):
@@ -272,7 +270,7 @@ class WPWindow(QMainWindow):
                 )
                 if flag:
                     if other_user == self.login:
-                        show_warning('Impossible operation', 'You can`t synchronize folder with yourself')
+                        show_dialog('Impossible operation', 'You can`t synchronize folder with yourself')
                         return
                     synchronize(
                         current_user=self.login,
@@ -281,7 +279,7 @@ class WPWindow(QMainWindow):
                         token=self.token
                     )
             else:
-                show_warning('Invalid operation', 'Folder you want to synchronize should be actual')
+                show_dialog('Invalid operation', 'Folder you want to synchronize should be actual')
 
     @QtCore.pyqtSlot()
     def change_password(self):

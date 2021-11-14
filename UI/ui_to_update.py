@@ -6,9 +6,9 @@ from PyQt5.QtWidgets import QMainWindow
 from UI_functional.workplace import update_actual_folder, make_no_actual, get_folders
 
 
-class TCWindow(QMainWindow):
+class TUWindow(QMainWindow):
     def __init__(self, login, token, folders, wpw):
-        super(TCWindow, self).__init__()
+        super(TUWindow, self).__init__()
         self.login = login
         self.token = token
         self.folders = folders

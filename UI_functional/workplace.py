@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QInputDialog
 from data_processing.get_folder_data import get_mac, get_json, get_files
 from data_processing.constants import PROTOCOL, IP, PORT
 from data_processing.data_validation import check_request
-from UI.call_ui import show_warning
+from UI.call_ui import show_dialog
 
 
 def upload_folder(login, path, version, token):
@@ -63,8 +63,7 @@ def add_folder(login, path, version, token):
 
     if check_request(request):
         if request.content.decode('UTF-8') == 'False':
-            show_warning('Conflict of versions!',
-                         'Version with this name for this folder is already exist!')
+            show_dialog('Conflict of versions!', 'Version with this name for this folder is already exist!')
         else:
             if upload_folder(
                     login=login,
@@ -179,7 +178,7 @@ def delete_user(login, token, window):
             else:
                 break
         if count == 3:
-            show_warning('Confirmation error!', 'You have entered the wrong password too many times.')
+            show_dialog('Confirmation error!', 'You have entered the wrong password too many times.')
     return False
 
 
@@ -278,7 +277,8 @@ def update_actual_folder(login, path, token):
 
 
 # TODO: put in in thread
-def download_folder(login, path, version, token):
+# флаг равен 1, когда нужно актуальная версия, при этом имя версии не передаем
+def download_folder(login, path, token, version=None, flag=False):
     head = {'Content-Type': 'application/json', 'Authorization': token}
     request = requests.get(
         f'{PROTOCOL}://{IP}:{PORT}/download_folder/',
@@ -286,7 +286,8 @@ def download_folder(login, path, version, token):
             'login': login,
             'mac': get_mac(),
             'path': path,
-            'version': version
+            'version': version,
+            'flag': flag
         },
         headers=head
     )
@@ -327,7 +328,7 @@ def synchronize(current_user, current_folder, other_user, token):
     )
     if check_request(request):
         if request.content.decode('UTF-8') == 'False':
-            show_warning('Unable to connect', f'User {other_user} is offline, unable to send request')
+            show_dialog('Unable to connect', f'User {other_user} is offline, unable to send request')
         return
 
 

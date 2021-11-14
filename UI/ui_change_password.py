@@ -2,7 +2,7 @@ from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtWidgets import QMainWindow
 
 from UI_functional.change_perosnal_data import change_password
-from UI.call_ui import show_warning
+from UI.call_ui import show_dialog
 
 
 class CPWindow(QMainWindow):
@@ -47,40 +47,11 @@ class CPWindow(QMainWindow):
                 self.repeat_password_LineEdit.text()):
             if self.new_password_LineEdit.text() == self.repeat_password_LineEdit.text():
                 if change_password(
-                    login=self.login,
-                    old_password=self.old_password_LineEdit.text(),
-                    new_password=self.new_password_LineEdit.text(),
-                    token=self.token
+                        login=self.login,
+                        old_password=self.old_password_LineEdit.text(),
+                        new_password=self.new_password_LineEdit.text(),
+                        token=self.token
                 ):
                     self.close()
             else:
-                show_warning('Wrong data!', 'You entered different passwords')
-            # head = {'Content-Type': 'application/json', 'Authorization': self.token}
-            # request = requests.get(
-            #     f'{PROTOCOL}://{IP}:{PORT}/get_password/',
-            #     params={'login': self.login},
-            #     headers=head)
-            # if data_validation.check_request(request):
-            #     if bcrypt.checkpw(self.old_password_LineEdit.text().encode('UTF-8'), request.content):
-            #         if self.new_password_LineEdit.text() == self.repeat_password_LineEdit.text():
-            #             check = data_validation.is_password_valid(self.new_password_LineEdit.text())
-            #             if check[0]:
-            #                 head = {'Content-Type': 'application/json', 'Authorization': self.token}
-            #                 request = requests.get(
-            #                     f'{PROTOCOL}://{IP}:{PORT}/change_password/',
-            #                     params={
-            #                         'login': self.login,
-            #                         'password': bcrypt.hashpw(self.new_password_LineEdit.text().encode('UTF-8'),
-            #                                                   bcrypt.gensalt(rounds=5))
-            #                     },
-            #                     headers=head)
-            #                 if not data_validation.check_request(request):
-            #                     pass
-            #                 else:
-            #                     self.close()
-            #             else:
-            #                 call_ui.show_warning('Wrong data!', check[1])
-            #         else:
-            #             call_ui.show_warning('Wrong data!', 'You entered different passwords')
-            #     else:
-            #         call_ui.show_warning('Wrong data!', 'You entered wrong password!')
+                show_dialog('Wrong data!', 'You entered different passwords')

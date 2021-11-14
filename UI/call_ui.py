@@ -1,21 +1,15 @@
 from PyQt5.QtWidgets import QMessageBox
 
 
-def show_warning(title, text, flag='Warning'):
-    error = QMessageBox()
-    error.setWindowTitle(title)
-    error.setText(text)
-    if flag == 'Warning':
-        error.setIcon(QMessageBox.Warning)
-    elif flag == 'Critical':
-        error.setIcon(QMessageBox.Critical)
-    error.setStandardButtons(QMessageBox.Ok)
-    error.exec_()
-
-
-def notification(title, text):
-    note = QMessageBox()
-    note.setWindowTitle(title)
-    note.setText(text)
-    note.setIcon(QMessageBox.Information)
-    note.exec_()
+def show_dialog(title, text, flag=0):
+    dialog = QMessageBox()
+    dialog.setWindowTitle(title)
+    dialog.setText(text)
+    if flag == 0:
+        dialog.setIcon(QMessageBox.Warning)
+    elif flag == 1:
+        dialog.setIcon(QMessageBox.Critical)
+    elif flag == 2:
+        dialog.setIcon(QMessageBox.Information)
+    dialog.setStandardButtons(QMessageBox.Ok)
+    dialog.exec_()

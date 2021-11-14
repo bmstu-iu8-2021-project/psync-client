@@ -2,7 +2,9 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMainWindow, QAbstractItemView, QTableWidget, QTableWidgetItem, QCheckBox
 
-from UI_functional.synchronized import terminate_sync
+from UI_functional.synchronized import terminate_sync, synchronize_folder
+from UI_functional.workplace import download_folder
+from UI.call_ui import show_dialog
 
 
 class SWindow(QMainWindow):
@@ -12,7 +14,8 @@ class SWindow(QMainWindow):
         self.__token = token
         self.__wpw = wpw
         self.__mode = mode
-        self.data = data
+        self.__data = data
+        self.__flag = False
         self.__wpw.setEnabled(False)
 
         if self.__mode:
@@ -69,9 +72,6 @@ class SWindow(QMainWindow):
         self.sync_tableWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
         self.sync_tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
 
-    def confirm(self):
-        pass
-
     def create_update_table(self):
         columns = 4
         rows = 5
@@ -95,7 +95,7 @@ class SWindow(QMainWindow):
         self.sync_tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
 
     def fill_update_table(self):
-        for i in range(len(self.data['items'])):
+        for i in range(len(self.__data['items'])):
             check_box = QCheckBox()
             check_box.setChecked(True)
             check_box.setStyleSheet('''
@@ -104,16 +104,47 @@ class SWindow(QMainWindow):
                 };
             ''')
             self.sync_tableWidget.setCellWidget(i, 0, check_box)
-            self.sync_tableWidget.setItem(i, 1, QTableWidgetItem(self.data['items'][i]['other_user']))
-            self.sync_tableWidget.setItem(i, 2, QTableWidgetItem(self.data['items'][i]['current_folder']))
-            self.sync_tableWidget.setItem(i, 3, QTableWidgetItem(self.data['items'][i]['other_folder']))
+            self.sync_tableWidget.setItem(i, 1, QTableWidgetItem(self.__data['items'][i]['other_user']))
+            self.sync_tableWidget.setItem(i, 2, QTableWidgetItem(self.__data['items'][i]['current_folder']))
+            self.sync_tableWidget.setItem(i, 3, QTableWidgetItem(self.__data['items'][i]['other_folder']))
             self.sync_tableWidget.item(i, 1).setToolTip(self.sync_tableWidget.item(i, 1).text())
             self.sync_tableWidget.item(i, 2).setToolTip(self.sync_tableWidget.item(i, 2).text())
             self.sync_tableWidget.item(i, 3).setToolTip(self.sync_tableWidget.item(i, 3).text())
 
+    def confirm(self):
+        for i in range(self.sync_tableWidget.rowCount()):
+            if self.sync_tableWidget.item(i, 1) is not None:
+                check_box = self.sync_tableWidget.cellWidget(i, 0)
+                if check_box.isChecked():
+                    if synchronize_folder(
+                            current_login=self.__login,
+                            other_login=self.sync_tableWidget.item(i, 1).text(),
+                            current_folder=self.sync_tableWidget.item(i, 2).text(),
+                            other_folder=self.sync_tableWidget.item(i, 3).text(),
+                            token=self.__wpw.token
+                    ):
+                        if not download_folder(
+                                login=self.__login,
+                                path=self.sync_tableWidget.item(i, 2).text(),
+                                token=self.__token,
+                                flag=True
+                        ):
+                            show_dialog('Error', 'Error occurred while synchronizing.\nProcess was stopped.')
+                            break
+                else:
+                    terminate_sync(
+                        current_login=self.__login,
+                        other_login=self.sync_tableWidget.item(i, 1).text(),
+                        current_folder=self.sync_tableWidget.item(i, 2).text(),
+                        other_folder=self.sync_tableWidget.item(i, 3).text(),
+                        token=self.__wpw.token
+                    )
+        self.__flag = True
+        self.close()
+
     def fill_static_table(self):
-        if self.data is not None:
-            count = len(self.data)
+        if self.__data is not None:
+            count = len(self.__data)
             if count > 5:
                 self.sync_tableWidget.setRowCount(count)
                 self.sync_tableWidget.setColumnWidth(3, 156)
@@ -122,9 +153,9 @@ class SWindow(QMainWindow):
                 self.sync_tableWidget.setRowCount(5)
                 self.sync_tableWidget.setColumnWidth(3, 168)
             for i in range(count):
-                for j in self.data[i].keys():
-                    z = list(self.data[i].keys()).index(j)
-                    self.sync_tableWidget.setItem(i, z, QTableWidgetItem(self.data[i][j]))
+                for j in self.__data[i].keys():
+                    z = list(self.__data[i].keys()).index(j)
+                    self.sync_tableWidget.setItem(i, z, QTableWidgetItem(self.__data[i][j]))
                     if z != self.sync_tableWidget.columnCount() - 1:
                         self.sync_tableWidget.item(i, z).setToolTip(self.sync_tableWidget.item(i, z).text())
         else:
@@ -132,17 +163,28 @@ class SWindow(QMainWindow):
             self.sync_tableWidget.setRowCount(5)
 
     def terminate_sync(self):
-        pass
-        # row = self.sync_tableWidget.currentRow()
-        # if self.sync_tableWidget.item(row, 0) is not None:
-        #     if terminate_sync(
-        #         current_login=self.__wpw.login,
-        #         other_login=self.sync_tableWidget.item(row, 0).text(),
-        #         current_folder=self.sync_tableWidget.item(row, 1).text(),
-        #         other_folder=self.sync_tableWidget.item(row, 2).text(),
-        #         token=self.__wpw.token
-        #     ):
-        #         self.fill_table()
+        # TODO: ask user to confirm action
+        row = self.sync_tableWidget.currentRow()
+        if self.sync_tableWidget.item(row, 0) is not None:
+            if terminate_sync(
+                    current_login=self.__wpw.login,
+                    other_login=self.sync_tableWidget.item(row, 0).text(),
+                    current_folder=self.sync_tableWidget.item(row, 1).text(),
+                    other_folder=self.sync_tableWidget.item(row, 2).text(),
+                    token=self.__wpw.token
+            ):
+                self.fill_static_table()
 
     def closeEvent(self, event):
+        if not self.__mode:
+            if not self.__flag:
+                for i in range(self.sync_tableWidget.rowCount()):
+                    if self.sync_tableWidget.item(i, 0) is not None:
+                        terminate_sync(
+                            current_login=self.__login,
+                            other_login=self.sync_tableWidget.item(i, 1).text(),
+                            current_folder=self.sync_tableWidget.item(i, 2).text(),
+                            other_folder=self.sync_tableWidget.item(i, 3).text(),
+                            token=self.__wpw.token
+                        )
         self.__wpw.setEnabled(True)
