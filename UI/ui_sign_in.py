@@ -48,7 +48,7 @@ class SIWindow(QMainWindow):
             token = auth(login, password)
             if json.loads(token)['token']:
                 self.password_LineEdit.setText('')
-                self.p_window = ui_workplace.WPWindow(login, self, token)
+                self.p_window = ui_workplace.WPWindow(login, token, self)
                 self.p_window.show()
                 self.hide()
             else:

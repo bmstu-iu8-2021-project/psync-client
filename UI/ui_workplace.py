@@ -5,20 +5,20 @@ from PyQt5.QtGui import QIcon
 
 from UI import ui_about, create_menu, ui_change_password, ui_change_email, ui_to_update, ui_accept_synchronize
 from UI import ui_synchronized
-from UI_functional.workplace import add_folder, update_folder, delete_version, delete_user, get_folders, make_actual
-from UI_functional.workplace import check_actuality, download_folder, synchronize, check_synchronized, get_synchronized
+from UI_functional.workplace import add_version, update_version, delete_version, delete_user, get_folders, make_actual
+from UI_functional.workplace import check_actuality, download_version, synchronize, check_synchronized, get_synchronized
 from UI.call_ui import show_dialog
 from connection import sockets
 
 
 class WPWindow(QMainWindow):
-    def __init__(self, login, siw, token):
+    def __init__(self, login, token, siw):
         super(WPWindow, self).__init__()
-        self.token = token
-        self.siw = siw
         self.login = login
-        self.socket = sockets.Socket(self.login)
+        self.token = token
+        self.__siw = siw
 
+        self.socket = sockets.Socket(self.login)
         self.socket.join_room()
         self.socket.signal.connect(self.notifications)
 
@@ -75,22 +75,9 @@ class WPWindow(QMainWindow):
 
         create_menu.du_menu(self)
 
-    def notifications(self, data):
-        if data['type'] == 'request_to_synchronize':
-            self.as_window = ui_accept_synchronize.ASWindow(data, self)
-            self.as_window.show()
-        elif data['type'] == 'answer':
-            text = f"User {data['current_user']} %s your request to synchronize"
-            if data['choice']:
-                text = text % 'accepted'
-            else:
-                text = text % 'denied'
-            show_dialog('Answer', text, 2)
-
     def create_table(self):
         columns = 3
         rows = 10
-        # 510 = 280 + 60 + 170
         self.folders_tableWidget.setGeometry(
             QtCore.QRect(10, 52, 510, self.folders_tableWidget.verticalHeader().height() * (rows + 1) + 15))
         self.folders_tableWidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
@@ -118,74 +105,6 @@ class WPWindow(QMainWindow):
         self.fill_table(data)
         self.check_actuality(data)
 
-    def check_synchronized(self):
-        to_sync = check_synchronized(
-            login=self.login,
-            token=self.token
-        )
-        if to_sync is not None:
-            if len(to_sync['items']) != 0:
-                self.tswindow = ui_synchronized.SWindow(
-                    login=self.login,
-                    mode=False,
-                    data=to_sync,
-                    wpw=self,
-                    token=self.token
-                )
-                self.tswindow.show()
-
-    def make_actual(self):
-        row = self.folders_tableWidget.currentRow()
-        if self.folders_tableWidget.item(row, 0) is not None:
-            font = QtGui.QFont()
-            font.setBold(True)
-            if not (self.folders_tableWidget.item(row, 0).font() == font):
-                if make_actual(
-                        login=self.login,
-                        path=self.folders_tableWidget.item(row, 0).text(),
-                        version=self.folders_tableWidget.item(row, 1).text(),
-                        token=self.token
-                ):
-                    self.fill_table(get_folders(
-                        login=self.login,
-                        token=self.token
-                    ))
-
-    def add_folder(self):
-        path_name = QFileDialog.getExistingDirectory(self, 'Choose the folder to add',
-                                                     options=QtWidgets.QFileDialog.DontUseNativeDialog)
-        if path_name:
-            version, flag = QInputDialog.getText(
-                self,
-                'Enter version name',
-                'Enter a version name so that you can recognize this version.',
-            )
-            if flag:
-                if add_folder(
-                        login=self.login,
-                        path=path_name,
-                        version=version,
-                        token=self.token
-                ):
-                    self.fill_table(get_folders(
-                        login=self.login,
-                        token=self.token
-                    ))
-
-    def delete_version(self):
-        row = self.folders_tableWidget.currentRow()
-        if self.folders_tableWidget.item(row, 0) is not None:
-            if delete_version(
-                    login=self.login,
-                    path=self.folders_tableWidget.item(row, 0).text(),
-                    version=self.folders_tableWidget.item(row, 1).text(),
-                    token=self.token
-            ):
-                self.fill_table(get_folders(
-                        login=self.login,
-                        token=self.token
-                    ))
-
     # заполнение таблицы актуальными данными (старые стираются)
     def fill_table(self, json_data):
         self.folders_tableWidget.setRowCount(0)
@@ -207,45 +126,81 @@ class WPWindow(QMainWindow):
                     if json_data[i][keys[-1]]:
                         self.folders_tableWidget.item(i, z).setFont(font)
 
-        # добавляем подсказки к ячейкам первого столбца
+            # добавляем подсказки к ячейкам первого столбца
             for i in range(count):
                 self.folders_tableWidget.item(i, 0).setToolTip(self.folders_tableWidget.item(i, 0).text())
                 self.folders_tableWidget.item(i, 1).setToolTip(self.folders_tableWidget.item(i, 1).text())
 
     def check_actuality(self, json_data):
-        # проверяем, свежие ли данные в акутальных версиях
+        # проверяем, свежие ли данные в актуальных версиях
         to_change = check_actuality(
             login=self.login,
             json_data=json_data,
             token=self.token
         )
         if to_change is not None:
-            self.tc_window = ui_to_update.TUWindow(self.login, self.token, to_change['folder'], self)
+            self.tc_window = ui_to_update.TUWindow(to_change['folder'], self)
             self.tc_window.show()
 
-    def update_version(self):
+    def check_synchronized(self):
+        to_sync = check_synchronized(
+            login=self.login,
+            token=self.token
+        )
+        if to_sync is not None:
+            if len(to_sync['items']) != 0:
+                self.tswindow = ui_synchronized.SWindow(
+                    mode=False,
+                    data=to_sync,
+                    wpw=self,
+                )
+                self.tswindow.show()
+
+    def add_folder(self):
+        path_name = QFileDialog.getExistingDirectory(self, 'Choose the folder to add',
+                                                     options=QtWidgets.QFileDialog.DontUseNativeDialog)
+        if path_name:
+            version, flag = QInputDialog.getText(
+                self,
+                'Enter version name',
+                'Enter a version name so that you can recognize this version.',
+            )
+            if flag:
+                if add_version(login=self.login, path=path_name, version=version, token=self.token):
+                    self.fill_table(get_folders(
+                        login=self.login,
+                        token=self.token
+                    ))
+
+    def delete_version(self):
         row = self.folders_tableWidget.currentRow()
         if self.folders_tableWidget.item(row, 0) is not None:
-            if update_folder(
+            if delete_version(
                     login=self.login,
                     path=self.folders_tableWidget.item(row, 0).text(),
                     version=self.folders_tableWidget.item(row, 1).text(),
                     token=self.token
             ):
                 self.fill_table(get_folders(
-                        login=self.login,
-                        token=self.token
-                    ))
+                    login=self.login,
+                    token=self.token
+                ))
+
+    def update_version(self):
+        row = self.folders_tableWidget.currentRow()
+        if self.folders_tableWidget.item(row, 0) is not None:
+            if update_version(login=self.login, path=self.folders_tableWidget.item(row, 0).text(),
+                              version=self.folders_tableWidget.item(row, 1).text(), token=self.token):
+                self.fill_table(get_folders(
+                    login=self.login,
+                    token=self.token
+                ))
 
     def download_version(self):
         row = self.folders_tableWidget.currentRow()
         if self.folders_tableWidget.item(row, 0) is not None:
-            if download_folder(
-                    login=self.login,
-                    path=self.folders_tableWidget.item(row, 0).text(),
-                    version=self.folders_tableWidget.item(row, 1).text(),
-                    token=self.token
-            ):
+            if download_version(login=self.login, path=self.folders_tableWidget.item(row, 0).text(), token=self.token,
+                                version=self.folders_tableWidget.item(row, 1).text()):
                 if make_actual(
                         login=self.login,
                         path=self.folders_tableWidget.item(row, 0).text(),
@@ -281,6 +236,35 @@ class WPWindow(QMainWindow):
             else:
                 show_dialog('Invalid operation', 'Folder you want to synchronize should be actual')
 
+    def make_actual(self):
+        row = self.folders_tableWidget.currentRow()
+        if self.folders_tableWidget.item(row, 0) is not None:
+            font = QtGui.QFont()
+            font.setBold(True)
+            if not (self.folders_tableWidget.item(row, 0).font() == font):
+                if make_actual(
+                        login=self.login,
+                        path=self.folders_tableWidget.item(row, 0).text(),
+                        version=self.folders_tableWidget.item(row, 1).text(),
+                        token=self.token
+                ):
+                    self.fill_table(get_folders(
+                        login=self.login,
+                        token=self.token
+                    ))
+
+    def notifications(self, data):
+        if data['type'] == 'request_to_synchronize':
+            self.as_window = ui_accept_synchronize.ASWindow(data, self)
+            self.as_window.show()
+        elif data['type'] == 'answer':
+            text = f"User {data['current_user']} %s your request to synchronize"
+            if data['choice']:
+                text = text % 'accepted'
+            else:
+                text = text % 'denied'
+            show_dialog('Answer', text, 2)
+
     @QtCore.pyqtSlot()
     def change_password(self):
         self.cp_window = ui_change_password.CPWindow(self.login, self.token)
@@ -309,8 +293,20 @@ class WPWindow(QMainWindow):
                     token=self.token,
                     window=self
             ):
-                self.siw.login_LineEdit.setText('')
+                self.__siw.login_LineEdit.setText('')
                 self.close()
+
+    @QtCore.pyqtSlot()
+    def show_synchronized(self):
+        self.s_window = ui_synchronized.SWindow(
+            mode=True,
+            wpw=self,
+            data=get_synchronized(
+                login=self.login,
+                token=self.token
+            ),
+        )
+        self.s_window.show()
 
     @QtCore.pyqtSlot()
     def exit_profile(self):
@@ -324,23 +320,9 @@ class WPWindow(QMainWindow):
     @QtCore.pyqtSlot()
     def exit(self):
         self.close()
-        self.siw.close()
-
-    @QtCore.pyqtSlot()
-    def show_synchronized(self):
-        self.s_window = ui_synchronized.SWindow(
-            login=self.login,
-            mode=True,
-            wpw=self,
-            data=get_synchronized(
-                login=self.login,
-                token=self.token
-            ),
-            token=self.token
-        )
-        self.s_window.show()
+        self.__siw.close()
 
     def closeEvent(self, event):
         self.socket.leave_room()
         QtWidgets.QApplication.closeAllWindows()
-        self.siw.show()
+        self.__siw.show()

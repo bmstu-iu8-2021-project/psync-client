@@ -143,7 +143,7 @@ class SUWindow(QMainWindow):
                 password=self.password_LineEdit.text()
             )
             if token:
-                self.p_window = ui_workplace.WPWindow(token, self.siw, self.login_LineEdit.text())
+                self.p_window = ui_workplace.WPWindow(self.login_LineEdit.text(), token, self.siw)
                 self.p_window.show()
                 self.hide()
         else:

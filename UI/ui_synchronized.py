@@ -3,18 +3,19 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMainWindow, QAbstractItemView, QTableWidget, QTableWidgetItem, QCheckBox
 
 from UI_functional.synchronized import terminate_sync, synchronize_folder
-from UI_functional.workplace import download_folder
+from UI_functional.workplace import download_version, get_synchronized
 from UI.call_ui import show_dialog
 
 
 class SWindow(QMainWindow):
-    def __init__(self, login, mode, data, wpw, token):
+    def __init__(self, mode, data, wpw):
         super(SWindow, self).__init__()
-        self.__login = login
-        self.__token = token
-        self.__wpw = wpw
         self.__mode = mode
         self.__data = data
+        self.__wpw = wpw
+
+        self.__login = self.__wpw.login
+        self.__token = self.__wpw.token
         self.__flag = False
         self.__wpw.setEnabled(False)
 
@@ -72,6 +73,26 @@ class SWindow(QMainWindow):
         self.sync_tableWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
         self.sync_tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
 
+    def fill_static_table(self):
+        if self.__data is not None:
+            count = len(self.__data)
+            if count > 5:
+                self.sync_tableWidget.setRowCount(count)
+                self.sync_tableWidget.setColumnWidth(3, 156)
+            else:
+                self.sync_tableWidget.setRowCount(0)
+                self.sync_tableWidget.setRowCount(5)
+                self.sync_tableWidget.setColumnWidth(3, 168)
+            for i in range(count):
+                for j in self.__data[i].keys():
+                    z = list(self.__data[i].keys()).index(j)
+                    self.sync_tableWidget.setItem(i, z, QTableWidgetItem(self.__data[i][j]))
+                    if z != self.sync_tableWidget.columnCount() - 1:
+                        self.sync_tableWidget.item(i, z).setToolTip(self.sync_tableWidget.item(i, z).text())
+        else:
+            self.sync_tableWidget.setRowCount(0)
+            self.sync_tableWidget.setRowCount(5)
+
     def create_update_table(self):
         columns = 4
         rows = 5
@@ -123,14 +144,15 @@ class SWindow(QMainWindow):
                             other_folder=self.sync_tableWidget.item(i, 3).text(),
                             token=self.__wpw.token
                     ):
-                        if not download_folder(
-                                login=self.__login,
-                                path=self.sync_tableWidget.item(i, 2).text(),
-                                token=self.__token,
-                                flag=True
-                        ):
-                            show_dialog('Error', 'Error occurred while synchronizing.\nProcess was stopped.')
-                            break
+                        print('should be synchronizes')
+                        # if not download_version(
+                        #         login=self.__login,
+                        #         path=self.sync_tableWidget.item(i, 2).text(),
+                        #         token=self.__token,
+                        #         flag=True
+                        # ):
+                        #     show_dialog('Error', 'Error occurred while synchronizing.\nProcess was stopped.')
+                        #     break
                 else:
                     terminate_sync(
                         current_login=self.__login,
@@ -141,26 +163,6 @@ class SWindow(QMainWindow):
                     )
         self.__flag = True
         self.close()
-
-    def fill_static_table(self):
-        if self.__data is not None:
-            count = len(self.__data)
-            if count > 5:
-                self.sync_tableWidget.setRowCount(count)
-                self.sync_tableWidget.setColumnWidth(3, 156)
-            else:
-                self.sync_tableWidget.setRowCount(0)
-                self.sync_tableWidget.setRowCount(5)
-                self.sync_tableWidget.setColumnWidth(3, 168)
-            for i in range(count):
-                for j in self.__data[i].keys():
-                    z = list(self.__data[i].keys()).index(j)
-                    self.sync_tableWidget.setItem(i, z, QTableWidgetItem(self.__data[i][j]))
-                    if z != self.sync_tableWidget.columnCount() - 1:
-                        self.sync_tableWidget.item(i, z).setToolTip(self.sync_tableWidget.item(i, z).text())
-        else:
-            self.sync_tableWidget.setRowCount(0)
-            self.sync_tableWidget.setRowCount(5)
 
     def terminate_sync(self):
         # TODO: ask user to confirm action
@@ -173,13 +175,17 @@ class SWindow(QMainWindow):
                     other_folder=self.sync_tableWidget.item(row, 2).text(),
                     token=self.__wpw.token
             ):
+                self.__data = get_synchronized(
+                    login=self.__login,
+                    token=self.__token
+                )
                 self.fill_static_table()
 
     def closeEvent(self, event):
         if not self.__mode:
             if not self.__flag:
                 for i in range(self.sync_tableWidget.rowCount()):
-                    if self.sync_tableWidget.item(i, 0) is not None:
+                    if self.sync_tableWidget.item(i, 1) is not None:
                         terminate_sync(
                             current_login=self.__login,
                             other_login=self.sync_tableWidget.item(i, 1).text(),

@@ -24,20 +24,22 @@ def register(login, mail, password):
         ).text == 'False':
             show_dialog('Wrong data!', 'This email seems to be taken.')
         else:
-            request = requests.get(f'{PROTOCOL}://{IP}:{PORT}/add_user/',
-                                   params={
-                                       'login': login,
-                                       'mac': get_mac(),
-                                       'email': mail,
-                                       'password': bcrypt.hashpw(password.encode('UTF-8'), bcrypt.gensalt(rounds=5)),
-                                   })
+            request = requests.get(
+                f'{PROTOCOL}://{IP}:{PORT}/add_user/',
+                params={
+                    'login': login,
+                    'mac': get_mac(),
+                    'email': mail,
+                    'password': bcrypt.hashpw(password.encode('UTF-8'), bcrypt.gensalt(rounds=5)),
+                })
             if check_request(request):
-                request = requests.get(f'{PROTOCOL}://{IP}:{PORT}/auth/',
-                                       params={
-                                           'login': login,
-                                           'password': password,
-                                           'mac': get_mac()
-                                       })
+                request = requests.get(
+                    f'{PROTOCOL}://{IP}:{PORT}/auth/',
+                    params={
+                        'login': login,
+                        'password': password,
+                        'mac': get_mac()
+                    })
                 if check_request(request):
                     return request.content
     else:
