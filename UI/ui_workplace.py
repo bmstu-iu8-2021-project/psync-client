@@ -3,18 +3,26 @@ from PyQt5.QtWidgets import QMainWindow, QMessageBox, QInputDialog, QFileDialog,
     QTableWidgetItem
 from PyQt5.QtGui import QIcon
 
-from UI import ui_about, create_menu, ui_change_password, ui_change_email
-from UI_functional.workplace import add_folder, update_folder, delete_version, delete_user, get_folders
+from UI import ui_about, create_menu, ui_change_password, ui_change_email, ui_to_update, ui_accept_synchronize
+from UI import ui_synchronized
+from UI_functional.workplace import add_version, update_version, delete_version, delete_user, get_folders, make_actual
+from UI_functional.workplace import check_actuality, download_version, synchronize, get_synchronized
+from UI.call_ui import show_dialog
+from connection import sockets
 
 
 class WPWindow(QMainWindow):
-    def __init__(self, token, siw, login):
+    def __init__(self, login, token, siw):
         super(WPWindow, self).__init__()
-        self.token = token
-        self.siw = siw
         self.login = login
+        self.token = token
+        self.__siw = siw
 
-        self.setWindowTitle('SyncGad • Sign In')
+        self.socket = sockets.Socket(self.login)
+        self.socket.join_room()
+        self.socket.signal.connect(self.notifications)
+
+        self.setWindowTitle('SyncGad • Workplace')
         self.setGeometry(600, 300, 580, 385)
         self.setFixedSize(self.size())
 
@@ -47,27 +55,35 @@ class WPWindow(QMainWindow):
         self.update_Button.setToolTip('Update chosen folder')
         self.update_Button.clicked.connect(self.update_version)
 
+        self.download_Button = QtWidgets.QPushButton(self)
+        self.download_Button.setGeometry(530, 225, 40, 40)
+        self.download_Button.setIcon(QIcon('icons/workplace/download_folder.svg'))
+        self.download_Button.setIconSize(QtCore.QSize(30, 30))
+        self.download_Button.setToolTip('Download chosen folder')
+        self.download_Button.clicked.connect(self.download_version)
+
         self.sync_Button = QtWidgets.QPushButton(self)
-        self.sync_Button.setGeometry(530, 225, 40, 40)
+        self.sync_Button.setGeometry(530, 285, 40, 40)
         self.sync_Button.setIcon(QIcon('icons/workplace/sync_folder.svg'))
         self.sync_Button.setIconSize(QtCore.QSize(30, 30))
         self.sync_Button.setToolTip('Synchronize chosen folder')
+        self.sync_Button.clicked.connect(self.synchronize)
 
         self.folders_tableWidget = QTableWidget(self)
         self.create_table()
+        # self.check_synchronized()
 
         create_menu.du_menu(self)
 
     def create_table(self):
         columns = 3
         rows = 10
-        # 510 = 280 + 60 + 170
         self.folders_tableWidget.setGeometry(
             QtCore.QRect(10, 52, 510, self.folders_tableWidget.verticalHeader().height() * (rows + 1) + 15))
         self.folders_tableWidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.folders_tableWidget.setRowCount(rows)
         self.folders_tableWidget.setColumnCount(columns)
-        self.folders_tableWidget.setHorizontalHeaderLabels(('Folder', 'Version', 'Edited at'))
+        self.folders_tableWidget.setHorizontalHeaderLabels(('Folder', 'Version', 'Actual for'))
         self.folders_tableWidget.setColumnWidth(0, 278)
         self.folders_tableWidget.setColumnWidth(1, 60)
         self.folders_tableWidget.setColumnWidth(2, 170)
@@ -80,18 +96,55 @@ class WPWindow(QMainWindow):
         self.folders_tableWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
         self.folders_tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
 
-        self.fill_table()
+        self.folders_tableWidget.doubleClicked.connect(self.make_actual)
 
-    # def get_files(self):
-    #     row = self.folders_tableWidget.currentRow()
-    #     if not (self.folders_tableWidget.item(row, 0) is None):
-    #         folder = self.folders_tableWidget.item(row, 0).text()
-    #         version = self.folders_tableWidget.item(row, 1).text()
-    #         self.f_window = ui_files.FWindow(self.token, self.login, folder, version)
-    #         self.f_window.show()
+        data = get_folders(
+            login=self.login,
+            token=self.token
+        )
+        self.fill_table(data)
+        self.check_actuality(data)
+
+    # заполнение таблицы актуальными данными (старые стираются)
+    def fill_table(self, json_data):
+        self.folders_tableWidget.setRowCount(0)
+        self.folders_tableWidget.setRowCount(10)
+        if json_data is not None:
+            count = len(json_data)
+            if count <= 10:
+                self.folders_tableWidget.setColumnWidth(0, 278)
+            else:
+                self.folders_tableWidget.setRowCount(count)
+                self.folders_tableWidget.setColumnWidth(0, 264)
+            font = QtGui.QFont()
+            font.setBold(True)
+            for i in range(count):
+                keys = list(json_data[i].keys())
+                for j in keys[:-1]:
+                    z = keys.index(j)
+                    self.folders_tableWidget.setItem(i, z, QTableWidgetItem(json_data[i][j]))
+                    if json_data[i][keys[-1]]:
+                        self.folders_tableWidget.item(i, z).setFont(font)
+
+            # добавляем подсказки к ячейкам первого столбца
+            for i in range(count):
+                self.folders_tableWidget.item(i, 0).setToolTip(self.folders_tableWidget.item(i, 0).text())
+                self.folders_tableWidget.item(i, 1).setToolTip(self.folders_tableWidget.item(i, 1).text())
+
+    def check_actuality(self, json_data):
+        # проверяем, свежие ли данные в актуальных версиях
+        to_change = check_actuality(
+            login=self.login,
+            json_data=json_data,
+            token=self.token
+        )
+        if to_change is not None:
+            self.tc_window = ui_to_update.TUWindow(to_change['folder'], self)
+            self.tc_window.show()
 
     def add_folder(self):
-        path_name = QFileDialog.getExistingDirectory(self, 'Choose the folder to add')
+        path_name = QFileDialog.getExistingDirectory(self, 'Choose the folder to add',
+                                                     options=QtWidgets.QFileDialog.DontUseNativeDialog)
         if path_name:
             version, flag = QInputDialog.getText(
                 self,
@@ -99,233 +152,104 @@ class WPWindow(QMainWindow):
                 'Enter a version name so that you can recognize this version.',
             )
             if flag:
-                if add_folder(
+                if add_version(login=self.login, path=path_name, version=version, token=self.token):
+                    self.fill_table(get_folders(
                         login=self.login,
-                        path=path_name,
-                        version=version,
                         token=self.token
-                ):
-                    self.fill_table()
-
-            # mac = get_mac()
-            # folder_content = get_json(get_files(path_name))
-            # folder_content['login'] = self.login
-            # folder_content['mac'] = mac
-            # folder_content['path_file'] = path_name
-            #
-            # version, flag = QInputDialog.getText(
-            #     self,
-            #     'Enter version name',
-            #     'Enter a version name so that you can recognize this version.',
-            # )
-            # if flag:
-            #     folder_content['new_version'] = version
-            #
-            #     head = {'Content-Type': 'application/json', 'Authorization': self.token}
-            #
-            #     # проверка, сохранены есть ли уже сохранение этой папки с этим названием версии
-            #     request = requests.get(
-            #         f'{PROTOCOL}://{IP}:{PORT}/find_version/',
-            #         params={
-            #             'login': self.login,
-            #             'mac': mac,
-            #             'folder_path': path_name,
-            #             'version': version
-            #         },
-            #         headers=head
-            #     )
-            #
-            #     if check_request(request):
-            #         if request.content.decode('UTF-8') == 'False':
-            #             call_ui.show_warning('Conflict of versions!',
-            #                                  'Version with this name for this folder is already exist!')
-            #         else:
-            #             # создаем архив
-            #             zip_name = '_'.join([self.login, path_name[path_name.rfind('/') + 1:], version]) + '.zip'
-            #             zip_folder = zipfile.ZipFile(zip_name, 'w')
-            #             for root, dirs, files in os.walk(path_name):
-            #                 for file in files:
-            #                     zip_folder.write(os.path.join(root, file))
-            #             zip_folder.close()
-            #
-            #             # отправляем архив
-            #             request = requests.get(
-            #                 f'{PROTOCOL}://{IP}:{PORT}/send_folder/',
-            #                 files={
-            #                     'file': (zip_name, open(zip_name, 'rb'))
-            #                 },
-            #                 headers={'Authorization': self.token},
-            #             )
-            #
-            #             if check_request(request):
-            #                 # удаляем архив
-            #                 os.remove(zip_name)
-            #
-            #                 # отправляем данные в бд
-            #                 request = requests.get(
-            #                     f'{PROTOCOL}://{IP}:{PORT}/add_version/',
-            #                     data=json.dumps(folder_content),
-            #                     headers=head,
-            #                 )
-            #
-            #                 if check_request(request):
-            #                     self.fill_table()
+                    ))
 
     def delete_version(self):
         row = self.folders_tableWidget.currentRow()
-        if not (self.folders_tableWidget.item(row, 0) is None):
+        if self.folders_tableWidget.item(row, 0) is not None:
             if delete_version(
-                login=self.login,
-                path=self.folders_tableWidget.item(row, 0).text(),
-                version=self.folders_tableWidget.item(row, 1).text(),
-                token=self.token
+                    login=self.login,
+                    path=self.folders_tableWidget.item(row, 0).text(),
+                    version=self.folders_tableWidget.item(row, 1).text(),
+                    token=self.token
             ):
-                self.fill_table()
-        #     folder = self.folders_tableWidget.item(row, 0).text()
-        #     version = self.folders_tableWidget.item(row, 1).text()
-        #
-        #     head = {'Content-Type': 'application/json', 'Authorization': self.token}
-        #     # удаляем данные
-        #     request = requests.get(
-        #         f'{PROTOCOL}://{IP}:{PORT}/delete_version/',
-        #         params={
-        #             'login': self.login,
-        #             'mac': get_mac(),
-        #             'folder_path': folder,
-        #             'version': version,
-        #         },
-        #         headers=head
-        #     )
-        #     if check_request(request):
-        #         self.fill_table()
-        # else:
-        #     pass
-
-    # заполнение таблицы актуальными данными (старые стираются)
-    def fill_table(self):
-        self.folders_tableWidget.setRowCount(10)
-        # head = {'Content-Type': 'application/json', 'Authorization': self.token}
-        # # получаем данные о папках этого пользователя, этого устройства
-        # request = requests.get(
-        #     f'{PROTOCOL}://{IP}:{PORT}/get_folders/',
-        #     params={
-        #         'login': self.login,
-        #         'mac': get_mac(),
-        #     },
-        #     headers=head
-        # )
-        # if check_request(request):
-        #     data = json.loads(request.content.decode('UTF-8'))
-        
-        data = get_folders(login=self.login, token=self.token)
-        if not (data is None):
-            data_count = len(data)
-            self.folders_tableWidget.setRowCount(0)
-            if data_count <= 10:
-                # self.folders_tableWidget.setColumnWidth(0, 298)
-                self.folders_tableWidget.setRowCount(10)
-            else:
-                # self.folders_tableWidget.setColumnWidth(0, 284)
-                self.folders_tableWidget.setRowCount(data_count)
-            for i in range(len(data.keys())):
-                key = list(data.keys())[i]
-                for j in range(len(data[key])):
-                    self.folders_tableWidget.setItem(j, i, QTableWidgetItem(str(data[key][j])))
-
-        # добавляем подсказки к ячейкам первого столбца
-        for i in range(self.folders_tableWidget.rowCount()):
-            if not self.folders_tableWidget.item(i, 0) is None:
-                self.folders_tableWidget.item(i, 0).setToolTip(self.folders_tableWidget.item(i, 0).text())
-
-    def add_version(self):
-        pass
-        # path = self.path_lineedit.text()
-        # if not os.path.exists(path):
-        #     call_ui.show_warning('Wrong data!', 'This folder does not exist!')
-        # else:
-        #     mac = get_mac()
-        #     folder_content = get_json(get_files(path))
-        #     folder_content['login'] = self.login
-        #     folder_content['mac'] = mac
-        #     folder_content['path_file'] = path
-        #
-        #     version, flag = QInputDialog.getText(
-        #         self,
-        #         'Enter version name',
-        #         'Enter a version name so that you can recognize this version.',
-        #     )
-        #     if flag:
-        #         folder_content['new_version'] = version
-        #
-        #         head = {'Content-Type': 'application/json', 'Authorization': self.token}
-        #         request = requests.get(
-        #             f'{PROTOCOL}://{IP}:{PORT}/find_version/',
-        #             params={
-        #                 'login': self.login,
-        #                 'mac': mac,
-        #                 'folder_path': path,
-        #                 'version': version
-        #             },
-        #             headers=head
-        #         )
-        #
-        #         if check_request(request):
-        #             if request.content.decode('UTF-8') == '1':
-        #                 call_ui.show_warning('Conflict of versions!', 'Version with this name is already exist!')
-        #             else:
-        #                 request = requests.get(
-        #                     f'{PROTOCOL}://{IP}:{PORT}/add_version/',
-        #                     data=json.dumps(folder_content),
-        #                     headers=head
-        #                 )
-        #                 check_request(request)
+                self.fill_table(get_folders(
+                    login=self.login,
+                    token=self.token
+                ))
 
     def update_version(self):
         row = self.folders_tableWidget.currentRow()
-        if not (self.folders_tableWidget.item(row, 0) is None):
-            new_version, flag = QInputDialog.getText(
-                self,
-                'Enter version name',
-                'Enter a new version name',
-            )
-            if flag:
-                if update_folder(
+        if self.folders_tableWidget.item(row, 0) is not None:
+            if update_version(login=self.login, path=self.folders_tableWidget.item(row, 0).text(),
+                              version=self.folders_tableWidget.item(row, 1).text(), token=self.token):
+                self.fill_table(get_folders(
+                    login=self.login,
+                    token=self.token
+                ))
+
+    def download_version(self):
+        row = self.folders_tableWidget.currentRow()
+        if self.folders_tableWidget.item(row, 0) is not None:
+            if download_version(login=self.login, path=self.folders_tableWidget.item(row, 0).text(), token=self.token,
+                                version=self.folders_tableWidget.item(row, 1).text()):
+                if make_actual(
                         login=self.login,
                         path=self.folders_tableWidget.item(row, 0).text(),
-                        old_version=self.folders_tableWidget.item(row, 1).text(),
-                        new_version=new_version,
+                        version=self.folders_tableWidget.item(row, 1).text(),
                         token=self.token
                 ):
-                    self.fill_table()
-
-            # path = self.folders_tableWidget.item(row, 0).text()
-            # old_version = self.folders_tableWidget.item(row, 1).text()
-            # mac = get_mac()
-            # data = get_json(get_files(path))
-            # data['login'] = self.login
-            # data['mac'] = mac
-            # data['path_file'] = path
-            # data['old_version'] = old_version
-            #
-            # head = {'Content-Type': 'application/json', 'Authorization': self.token}
-            # new_version, flag = QInputDialog.getText(
-            #     self,
-            #     'Enter version name',
-            #     'Enter a new version name',
-            # )
-            # if flag:
-            #     data['new_version'] = new_version
-            #
-            #     request = requests.get(
-            #         f'{PROTOCOL}://{IP}:{PORT}/update_version/',
-            #         data=json.dumps(data),
-            #         headers=head
-            #     )
-            #     if check_request(request):
-            #         self.fill_table()
+                    self.fill_table(get_folders(
+                        login=self.login,
+                        token=self.token
+                    ))
 
     def synchronize(self):
-        pass
+        row = self.folders_tableWidget.currentRow()
+        if self.folders_tableWidget.item(row, 0) is not None:
+            check_font = QtGui.QFont()
+            check_font.setBold(True)
+            if self.folders_tableWidget.item(row, 0).font() == check_font:
+                other_user, flag = QInputDialog.getText(
+                    self,
+                    'Enter user`s name',
+                    'Enter user name you want to synchronize with',
+                )
+                if flag:
+                    if other_user == self.login:
+                        show_dialog('Impossible operation', 'You can`t synchronize folder with yourself')
+                        return
+                    synchronize(
+                        current_user=self.login,
+                        current_folder=self.folders_tableWidget.item(row, 0).text(),
+                        other_user=other_user,
+                        token=self.token
+                    )
+            else:
+                show_dialog('Invalid operation', 'Folder you want to synchronize should be actual')
+
+    def make_actual(self):
+        row = self.folders_tableWidget.currentRow()
+        if self.folders_tableWidget.item(row, 0) is not None:
+            font = QtGui.QFont()
+            font.setBold(True)
+            if not (self.folders_tableWidget.item(row, 0).font() == font):
+                if make_actual(
+                        login=self.login,
+                        path=self.folders_tableWidget.item(row, 0).text(),
+                        version=self.folders_tableWidget.item(row, 1).text(),
+                        token=self.token
+                ):
+                    self.fill_table(get_folders(
+                        login=self.login,
+                        token=self.token
+                    ))
+
+    def notifications(self, data):
+        if data['type'] == 'request_to_synchronize':
+            self.as_window = ui_accept_synchronize.ASWindow(data, self)
+            self.as_window.show()
+        elif data['type'] == 'answer':
+            text = f"User {data['current_user']} %s your request to synchronize"
+            if data['choice']:
+                text = text % 'accepted'
+            else:
+                text = text % 'denied'
+            show_dialog('Answer', text, 2)
 
     @QtCore.pyqtSlot()
     def change_password(self):
@@ -350,48 +274,25 @@ class WPWindow(QMainWindow):
 
     def delete_dialog_action(self, button):
         if button.text() == '&Yes':
-
             if delete_user(
-                login=self.login,
-                token=self.token,
-                window=self
+                    login=self.login,
+                    token=self.token,
+                    window=self
             ):
-                self.siw.login_lineedit.setText('')
+                self.__siw.login_LineEdit.setText('')
                 self.close()
 
-            # count = 0
-            # head = {'Content-Type': 'application/json', 'Authorization': self.token}
-            # request = requests.get(
-            #     f'{PROTOCOL}://{IP}:{PORT}/get_password/',
-            #     params={
-            #         'login': self.login
-            #     },
-            #     headers=head)
-            # if check_request(request):
-            #     password = request.content
-            #     while count != 3:
-            #         pass_input, flag = QInputDialog.getText(
-            #             self,
-            #             'Confirm your actions',
-            #             'To delete your account, enter your password.',
-            #             echo=QtWidgets.QLineEdit.Password
-            #         )
-            #         if flag and pass_input:
-            #             count += 1
-            #             if bcrypt.checkpw(pass_input.encode('UTF-8'), password):
-            #                 head = {'Content-Type': 'application/json', 'Authorization': self.token}
-            #                 request = requests.get(
-            #                     f'{PROTOCOL}://{IP}:{PORT}/delete_user/',
-            #                     params={'login': self.login},
-            #                     headers=head)
-            #                 if check_request(request):
-            #                     self.siw.login_lineedit.setText('')
-            #                     self.close()
-            #                     break
-            #         else:
-            #             break
-            #     if count == 3:
-            #         call_ui.show_warning('Confirmation error!', 'You have entered the wrong password too many times.')
+    @QtCore.pyqtSlot()
+    def show_synchronized(self):
+        self.s_window = ui_synchronized.SWindow(
+            mode=True,
+            wpw=self,
+            data=get_synchronized(
+                login=self.login,
+                token=self.token
+            ),
+        )
+        self.s_window.show()
 
     @QtCore.pyqtSlot()
     def exit_profile(self):
@@ -405,8 +306,9 @@ class WPWindow(QMainWindow):
     @QtCore.pyqtSlot()
     def exit(self):
         self.close()
-        self.siw.close()
+        self.__siw.close()
 
     def closeEvent(self, event):
+        self.socket.leave_room()
         QtWidgets.QApplication.closeAllWindows()
-        self.siw.show()
+        self.__siw.show()

@@ -19,13 +19,11 @@ def get_files(path_name):
 
 def get_json(files):
     table = {
-        'login': '',
-        'mac': '',
-        'path_file': '',
-        'old_version': '',
-        'new_version': '',
-        'files': dict()
+        'files': []
     }
     for file in files:
-        table['files'][file] = os.stat(file).st_mtime
+        table['files'].append({
+            'name': file[file.find(':') + 1:].replace('\\', '/'),
+            'timestamp': round(os.stat(file).st_mtime, 0)
+        })
     return table

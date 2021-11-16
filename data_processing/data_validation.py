@@ -1,6 +1,6 @@
 import re
 
-from UI.call_ui import show_warning
+from UI.call_ui import show_dialog
 
 
 def is_login_valid(login):
@@ -40,22 +40,13 @@ def is_password_valid(password):
 def check_request(req):
     if req.ok:
         return True
+    code = req.status_code
+    if code == 400:
+        show_dialog('Error!', 'The operation failed. Bad request or token was not found', 1)
+    elif code == 403:
+        show_dialog('Error!', 'The operation failed. Token was incorrect', 1)
+    elif code == 404:
+        show_dialog('Error!', 'Handler for this request was not found', 1)
     else:
-        code = req.status_code
-        if code == 400:
-            show_warning('Error!',
-                         'The operation failed. Token was not found',
-                         'Critical')
-        elif code == 403:
-            show_warning('Error!',
-                         'The operation failed. Token was incorrect',
-                         'Critical')
-        elif code == 404:
-            show_warning('Error!',
-                         'Wrong request',
-                         'Critical')
-        else:
-            show_warning('Error!',
-                         f'Unexpected error with code {code}',
-                         'Critical')
-        return False
+        show_dialog('Error!', f'Unexpected error with code {code}', 1)
+    return False

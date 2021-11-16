@@ -32,7 +32,8 @@ class VCWindow(QMainWindow):
         self.descripcion_Lable.setFont(font)
         self.descripcion_Lable.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
         self.descripcion_Lable.setWordWrap(True)
-        self.descripcion_Lable.setText("The verification code has been sent to the specified mail. To complete the registration, enter it in the field below.")
+        self.descripcion_Lable.setText("The verification code has been sent to the specified mail. To complete the "
+                                       "registration, enter it in the field below.")
 
     def enter(self):
         if self.code_LineEdit.text():

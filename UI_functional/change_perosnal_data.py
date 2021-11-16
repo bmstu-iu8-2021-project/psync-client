@@ -3,7 +3,7 @@ import requests
 
 from data_processing.constants import PROTOCOL, IP, PORT
 from data_processing.data_validation import check_request, is_mail_valid, is_password_valid
-from UI.call_ui import show_warning
+from UI.call_ui import show_dialog
 
 
 def change_mail(login, new_mail, password, token):
@@ -16,11 +16,11 @@ def change_mail(login, new_mail, password, token):
         headers=head)
     if check_request(request):
         if not bcrypt.checkpw(password.encode('UTF-8'), request.content):
-            show_warning('Wrong data!', 'You entered wrong password!')
+            show_dialog('Wrong data!', 'You entered wrong password!')
         else:
             check = is_mail_valid(new_mail)
             if not check[0]:
-                show_warning('Wrong data!', check[1])
+                show_dialog('Wrong data!', check[1])
             else:
                 head = {'Content-Type': 'application/json', 'Authorization': token}
                 request = requests.get(
@@ -44,11 +44,11 @@ def change_password(login, old_password, new_password, token):
         headers=head)
     if check_request(request):
         if not bcrypt.checkpw(old_password.encode('UTF-8'), request.content):
-            show_warning('Wrong data!', 'You entered wrong password!')
+            show_dialog('Wrong data!', 'You entered wrong password!')
         else:
             check = is_password_valid(new_password)
             if not check[0]:
-                show_warning('Wrong data!', check[1])
+                show_dialog('Wrong data!', check[1])
             else:
                 request = requests.get(
                     f'{PROTOCOL}://{IP}:{PORT}/change_password/',

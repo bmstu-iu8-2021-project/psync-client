@@ -36,32 +36,9 @@ class CEWindow(QMainWindow):
     def accept(self):
         if self.password_LineEdit.text() and self.new_email_LineEdit.text():
             if change_mail(
-                login=self.login,
-                new_mail=self.new_email_LineEdit.text(),
-                password=self.password_LineEdit.text(),
-                token=self.token
+                    login=self.login,
+                    new_mail=self.new_email_LineEdit.text(),
+                    password=self.password_LineEdit.text(),
+                    token=self.token
             ):
                 self.close()
-
-            # head = {'Content-Type': 'application/json', 'Authorization': self.token}
-            # request = requests.get(
-            #     f'{PROTOCOL}://{IP}:{PORT}/get_password/',
-            #     params={'login': self.login},
-            #     headers=head)
-            # if data_validation.check_request(request):
-            #     if bcrypt.checkpw(self.password_LineEdit.text().encode('UTF-8'), request.content):
-            #         check = data_validation.is_mail_valid(self.new_email_LineEdit.text())
-            #         if check[0]:
-            #             head = {'Content-Type': 'application/json', 'Authorization': self.token}
-            #             request = requests.get(
-            #                 f'{PROTOCOL}://{IP}:{PORT}/change_mail/',
-            #                 params={'login': self.login, 'email': self.new_email_LineEdit.text()},
-            #                 headers=head)
-            #             if not data_validation.check_request(request):
-            #                 pass
-            #             else:
-            #                 self.close()
-            #         else:
-            #             call_ui.show_warning('Wrong data!', check[1])
-            #     else:
-            #         call_ui.show_warning('Wrong data!', 'You entered wrong password!')
