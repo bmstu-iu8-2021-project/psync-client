@@ -6,10 +6,13 @@ from UI.call_ui import show_dialog
 
 
 class CPWindow(QMainWindow):
-    def __init__(self, login, token):
+    def __init__(self, wpw):
         super(CPWindow, self).__init__()
-        self.login = login
-        self.token = token
+        self.__wpw = wpw
+
+        self.__login = self.__wpw.login
+        self.__token = self.__wpw.token
+        self.__wpw.setEnabled(False)
 
         self.setWindowTitle('Change password')
         self.setGeometry(600, 300, 280, 169)
@@ -18,17 +21,17 @@ class CPWindow(QMainWindow):
         font = QtGui.QFont()
         font.setPointSize(10)
 
-        self.old_password_LineEdit = QtWidgets.QLineEdit(self)
-        self.old_password_LineEdit.setGeometry(10, 10, 260, 31)
-        self.old_password_LineEdit.setFont(font)
-        self.old_password_LineEdit.setEchoMode(QtWidgets.QLineEdit.Password)
-        self.old_password_LineEdit.setPlaceholderText('Enter your old password')
+        self.old_password_lineEdit = QtWidgets.QLineEdit(self)
+        self.old_password_lineEdit.setGeometry(10, 10, 260, 31)
+        self.old_password_lineEdit.setFont(font)
+        self.old_password_lineEdit.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.old_password_lineEdit.setPlaceholderText('Enter your old password')
 
-        self.new_password_LineEdit = QtWidgets.QLineEdit(self)
-        self.new_password_LineEdit.setGeometry(10, 50, 260, 31)
-        self.new_password_LineEdit.setFont(font)
-        self.new_password_LineEdit.setEchoMode(QtWidgets.QLineEdit.Password)
-        self.new_password_LineEdit.setPlaceholderText('Enter your new password')
+        self.new_password_lineEdit = QtWidgets.QLineEdit(self)
+        self.new_password_lineEdit.setGeometry(10, 50, 260, 31)
+        self.new_password_lineEdit.setFont(font)
+        self.new_password_lineEdit.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.new_password_lineEdit.setPlaceholderText('Enter your new password')
 
         self.repeat_password_LineEdit = QtWidgets.QLineEdit(self)
         self.repeat_password_LineEdit.setGeometry(10, 90, 260, 31)
@@ -42,16 +45,20 @@ class CPWindow(QMainWindow):
         self.accept_Button.clicked.connect(self.accept)
 
     def accept(self):
-        if (self.old_password_LineEdit.text() and
-                self.new_password_LineEdit.text() and
+        if (self.old_password_lineEdit.text() and
+                self.new_password_lineEdit.text() and
                 self.repeat_password_LineEdit.text()):
-            if self.new_password_LineEdit.text() == self.repeat_password_LineEdit.text():
+            if self.new_password_lineEdit.text() == self.repeat_password_LineEdit.text():
                 if change_password(
-                        login=self.login,
-                        old_password=self.old_password_LineEdit.text(),
-                        new_password=self.new_password_LineEdit.text(),
-                        token=self.token
+                        login=self.__login,
+                        old_password=self.old_password_lineEdit.text(),
+                        new_password=self.new_password_lineEdit.text(),
+                        token=self.__token
                 ):
                     self.close()
+                    show_dialog('Success', 'Your password was successfully changed.', 2)
             else:
                 show_dialog('Wrong data!', 'You entered different passwords')
+
+    def closeEvent(self, event):
+        self.__wpw.setEnabled(True)

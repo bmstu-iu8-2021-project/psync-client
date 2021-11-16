@@ -3,7 +3,7 @@
 # TODO: json reading
 # TODO: files with the same name
 
-from os.path import join
+from os.path import join, exists
 import os
 import shutil
 from io import BytesIO
@@ -115,43 +115,43 @@ storage = '/home/peter/Study/03_semestr/Coursework/Storage/'
 #                 (arch_data[join(root, file).replace(destination, '')],
 #                  arch_data[join(root, file).replace(destination, '')]))
 
-# во входе 0 - путь к архиву, 1 - путь к архивируему, то есть выбранная папка внутри архива
-# разархивируем архив
-def take_out(current_archive, other_archive):
-    # разархивируем архив текущего пользователя во временную папку, при этом сохраним дату изменения
-    current = ZipFile(current_archive[0], 'r')
-    temp = str(time.time())
-    unzip_with_meta(current_archive[0], join(storage, temp))
-    current.close()
-
-    # разархивируем архив другого пользрвателя в хранилище
-    other = ZipFile(other_archive[0], 'r')
-    unzip_with_meta(other_archive[0], storage[:-1])
-    other.close()
-    # сливаем полученные папки во временную, удаляем остатки другого пользователя
-    for file in os.listdir(join(storage, other_archive[1])):
-        if os.path.isdir(join(storage, other_archive[1], file)):
-            shutil.move(join(storage, other_archive[1], file),
-                        join(storage, temp, current_archive[1]))
-        else:
-            shutil.copy2(join(storage, other_archive[1], file),
-                         join(storage, temp, current_archive[1]))
-    shutil.rmtree(join(storage, other_archive[1][:other_archive[1].find('/')]))
-
-    # создаем слитый архив и заполняем так, будто идем из корня устройства
-    merged = ZipFile(join(storage, f'{temp}.zip'), 'w')
-    for root, dirs, files in os.walk(join(storage, temp)):
-        for file in files:
-            merged.write(join(root, file), join(root.replace(join(storage, temp), ''), file))
-    merged.close()
-    # удаляем временную папку
-    shutil.rmtree(join(storage, temp))
-    # замещаем архив текущего пользователя слитым
-    os.rename(join(storage, f'{temp}.zip'), join(current_archive[0]))
+# # во входе 0 - путь к архиву, 1 - путь к архивируему, то есть выбранная папка внутри архива
+# # разархивируем архив
+# def take_out(current_archive, other_archive):
+#     # разархивируем архив текущего пользователя во временную папку, при этом сохраним дату изменения
+#     current = ZipFile(current_archive[0], 'r')
+#     temp = str(time.time())
+#     unzip_with_meta(current_archive[0], join(storage, temp))
+#     current.close()
+#
+#     # разархивируем архив другого пользрвателя в хранилище
+#     other = ZipFile(other_archive[0], 'r')
+#     unzip_with_meta(other_archive[0], storage[:-1])
+#     other.close()
+#     # сливаем полученные папки во временную, удаляем остатки другого пользователя
+#     for file in os.listdir(join(storage, other_archive[1])):
+#         if os.path.isdir(join(storage, other_archive[1], file)):
+#             shutil.move(join(storage, other_archive[1], file),
+#                         join(storage, temp, current_archive[1]))
+#         else:
+#             shutil.copy2(join(storage, other_archive[1], file),
+#                          join(storage, temp, current_archive[1]))
+#     shutil.rmtree(join(storage, other_archive[1][:other_archive[1].find('/')]))
+#
+#     # создаем слитый архив и заполняем так, будто идем из корня устройства
+#     merged = ZipFile(join(storage, f'{temp}.zip'), 'w')
+#     for root, dirs, files in os.walk(join(storage, temp)):
+#         for file in files:
+#             merged.write(join(root, file), join(root.replace(join(storage, temp), ''), file))
+#     merged.close()
+#     # удаляем временную папку
+#     shutil.rmtree(join(storage, temp))
+#     # замещаем архив текущего пользователя слитым
+#     os.rename(join(storage, f'{temp}.zip'), join(current_archive[0]))
 
 
 # разархивация с сохранением метаданных
-def unzip_with_meta(archive, destination):
+def unzip_with_date(archive, destination):
     # разархивируем архив в папку назначения
     arch = ZipFile(archive, 'r')
     arch.extractall(destination)
@@ -172,10 +172,47 @@ def unzip_with_meta(archive, destination):
             )
 
 
+def compare(path_one, path_two):
+    return abs(os.stat(path_one).st_mtime - os.stat(path_two).st_mtime) < 5
+
+
+def merge(current_archive, other_archive):
+    current = ZipFile(current_archive[0], 'r')
+    temp = str(time.time())
+    unzip_with_date(current_archive[0], join(storage, temp))
+    current.close()
+
+    other = ZipFile(other_archive[0], 'r')
+    unzip_with_date(other_archive[0], storage[:-1])
+    other.close()
+    for file in os.listdir(join(storage, other_archive[1])):
+        file_path = join(storage, other_archive[1], file)
+        destination = join(storage, temp, current_archive[1])
+        if os.path.isdir(file_path):
+            shutil.move(file_path, destination)
+        else:
+            if exists(join(destination, file)):
+                if compare(join(destination, file), file):
+                    shutil.copy2(file_path, destination)
+            else:
+                shutil.copy2(file_path, destination)
+    shutil.rmtree(join(storage, other_archive[1][:other_archive[1].find('/')]))
+
+    merged = ZipFile(join(storage, f'{temp}.zip'), 'w')
+    for root, dirs, files in os.walk(join(storage, temp)):
+        for file in files:
+            merged.write(join(root, file), join(root.replace(join(storage, temp), ''), file))
+    merged.close()
+    shutil.rmtree(join(storage, temp))
+    os.rename(join(storage, f'{temp}.zip'), join(current_archive[0]))
+
+
 if __name__ == '__main__':
     sign_in_window()
 
-    # take_out(('/home/peter/Study/03_semestr/Coursework/Storage/peter_Документы_v1.0.zip',
-    #           '/home/peter/Документы'[1:]),
-    #          ('/home/peter/Study/03_semestr/Coursework/Storage/peter_icons_v1.0.zip',
-    #           '/home/peter/Study/03_semestr/Coursework/Client part/icons'[1:]))
+    # pass
+
+    # merge(('/home/peter/Study/03_semestr/Coursework/Storage/peter_Документы_v1.0.zip',
+    #        '/home/peter/Документы'[1:]),
+    #       ('/home/peter/Study/03_semestr/Coursework/Storage/peter_icons_v1.0.zip',
+    #        '/home/peter/Study/03_semestr/Coursework/Client part/icons'[1:]))

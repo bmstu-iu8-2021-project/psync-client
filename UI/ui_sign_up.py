@@ -19,31 +19,31 @@ class SUWindow(QMainWindow):
         font = QtGui.QFont()
         font.setPointSize(10)
 
-        self.login_LineEdit = QtWidgets.QLineEdit(self)
-        self.login_LineEdit.setGeometry(10, 36, 260, 31)
-        self.login_LineEdit.setFont(font)
-        self.login_LineEdit.setPlaceholderText('Enter your login')
-        self.login_LineEdit.textChanged.connect(self.is_login_valid)
+        self.login_lineEdit = QtWidgets.QLineEdit(self)
+        self.login_lineEdit.setGeometry(10, 36, 260, 31)
+        self.login_lineEdit.setFont(font)
+        self.login_lineEdit.setPlaceholderText('Enter your login')
+        self.login_lineEdit.textChanged.connect(self.is_login_valid)
 
-        self.mail_LineEdit = QtWidgets.QLineEdit(self)
-        self.mail_LineEdit.setGeometry(10, 76, 260, 31)
-        self.mail_LineEdit.setFont(font)
-        self.mail_LineEdit.setPlaceholderText('Enter your mail')
-        self.mail_LineEdit.textChanged.connect(self.is_mail_valid)
+        self.mail_lineEdit = QtWidgets.QLineEdit(self)
+        self.mail_lineEdit.setGeometry(10, 76, 260, 31)
+        self.mail_lineEdit.setFont(font)
+        self.mail_lineEdit.setPlaceholderText('Enter your mail')
+        self.mail_lineEdit.textChanged.connect(self.is_mail_valid)
 
-        self.password_LineEdit = QtWidgets.QLineEdit(self)
-        self.password_LineEdit.setGeometry(10, 116, 260, 31)
-        self.password_LineEdit.setFont(font)
-        self.password_LineEdit.setEchoMode(QtWidgets.QLineEdit.Password)
-        self.password_LineEdit.setPlaceholderText('Enter your password')
-        self.password_LineEdit.textChanged.connect(self.is_password_valid)
+        self.password_lineEdit = QtWidgets.QLineEdit(self)
+        self.password_lineEdit.setGeometry(10, 116, 260, 31)
+        self.password_lineEdit.setFont(font)
+        self.password_lineEdit.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.password_lineEdit.setPlaceholderText('Enter your password')
+        self.password_lineEdit.textChanged.connect(self.is_password_valid)
 
-        self.pasrep_LineEdit = QtWidgets.QLineEdit(self)
-        self.pasrep_LineEdit.setGeometry(10, 156, 260, 31)
-        self.pasrep_LineEdit.setFont(font)
-        self.pasrep_LineEdit.setEchoMode(QtWidgets.QLineEdit.Password)
-        self.pasrep_LineEdit.setPlaceholderText('Repeat your password')
-        self.pasrep_LineEdit.textChanged.connect(self.are_passwords_same)
+        self.pasrep_lineEdit = QtWidgets.QLineEdit(self)
+        self.pasrep_lineEdit.setGeometry(10, 156, 260, 31)
+        self.pasrep_lineEdit.setFont(font)
+        self.pasrep_lineEdit.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.pasrep_lineEdit.setPlaceholderText('Repeat your password')
+        self.pasrep_lineEdit.textChanged.connect(self.are_passwords_same)
 
         self.signup_Button = QtWidgets.QPushButton(self)
         self.signup_Button.setGeometry(180, 196, 90, 28)
@@ -84,8 +84,8 @@ class SUWindow(QMainWindow):
         create_menu.un_menu(self)
 
     def is_login_valid(self):
-        flag, text = data_validation.is_login_valid(self.login_LineEdit.text())
-        if not flag and self.login_LineEdit.text():
+        flag, text = data_validation.is_login_valid(self.login_lineEdit.text())
+        if not flag and self.login_lineEdit.text():
             self.setFixedWidth(440)
             self.login_Label.setText(text)
             self.login_Label.adjustSize()
@@ -95,8 +95,8 @@ class SUWindow(QMainWindow):
             self.fix_size()
 
     def is_mail_valid(self):
-        flag, text = data_validation.is_mail_valid(self.mail_LineEdit.text())
-        if flag or not self.mail_LineEdit.text():
+        flag, text = data_validation.is_mail_valid(self.mail_lineEdit.text())
+        if flag or not self.mail_lineEdit.text():
             self.mail_Label.hide()
             self.fix_size()
         else:
@@ -106,8 +106,8 @@ class SUWindow(QMainWindow):
             self.mail_Label.show()
 
     def is_password_valid(self):
-        flag, text = data_validation.is_password_valid(self.password_LineEdit.text())
-        if flag or not self.password_LineEdit.text():
+        flag, text = data_validation.is_password_valid(self.password_lineEdit.text())
+        if flag or not self.password_lineEdit.text():
             self.password_Label.hide()
             self.fix_size()
         else:
@@ -115,14 +115,15 @@ class SUWindow(QMainWindow):
             self.password_Label.setText(text)
             self.password_Label.adjustSize()
             self.password_Label.show()
-        if self.pasrep_LineEdit.text() != '':
+        if self.pasrep_lineEdit.text():
             self.are_passwords_same()
 
     def are_passwords_same(self):
-        if self.password_LineEdit.text() and self.password_LineEdit.text() == self.pasrep_LineEdit.text():
+        if (self.password_lineEdit.text() and self.password_lineEdit.text() == self.pasrep_lineEdit.text()) or (
+                not self.pasrep_lineEdit.text()):
             self.pasrep_Label.hide()
             self.fix_size()
-        else:
+        elif self.pasrep_lineEdit.text():
             self.setFixedWidth(440)
             self.pasrep_Label.setText('Entered passwords do not match')
             self.pasrep_Label.adjustSize()
@@ -138,12 +139,12 @@ class SUWindow(QMainWindow):
     def accept(self):
         if self.width() == 280:
             token = register(
-                login=self.login_LineEdit.text(),
-                mail=self.mail_LineEdit.text(),
-                password=self.password_LineEdit.text()
+                login=self.login_lineEdit.text(),
+                mail=self.mail_lineEdit.text(),
+                password=self.password_lineEdit.text()
             )
             if token:
-                self.p_window = ui_workplace.WPWindow(self.login_LineEdit.text(), token, self.siw)
+                self.p_window = ui_workplace.WPWindow(self.login_lineEdit.text(), token, self.siw)
                 self.p_window.show()
                 self.hide()
         else:

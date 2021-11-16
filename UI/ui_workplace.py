@@ -1,13 +1,12 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtWidgets import QMainWindow, QMessageBox, QInputDialog, QFileDialog, QAbstractItemView, QTableWidget, \
-    QTableWidgetItem
+from PyQt5.QtWidgets import QMainWindow, QInputDialog, QFileDialog, QAbstractItemView, QTableWidget, QTableWidgetItem
 from PyQt5.QtGui import QIcon
 
 from UI import ui_about, create_menu, ui_change_password, ui_change_email, ui_to_update, ui_accept_synchronize
 from UI import ui_synchronized
 from UI_functional.workplace import add_version, update_version, delete_version, delete_user, get_folders, make_actual
 from UI_functional.workplace import check_actuality, download_version, synchronize, get_synchronized
-from UI.call_ui import show_dialog
+from UI.call_ui import show_dialog, show_verification_dialog
 from connection import sockets
 
 
@@ -71,7 +70,6 @@ class WPWindow(QMainWindow):
 
         self.folders_tableWidget = QTableWidget(self)
         self.create_table()
-        # self.check_synchronized()
 
         create_menu.du_menu(self)
 
@@ -161,33 +159,10 @@ class WPWindow(QMainWindow):
     def delete_version(self):
         row = self.folders_tableWidget.currentRow()
         if self.folders_tableWidget.item(row, 0) is not None:
-            if delete_version(
-                    login=self.login,
-                    path=self.folders_tableWidget.item(row, 0).text(),
-                    version=self.folders_tableWidget.item(row, 1).text(),
-                    token=self.token
-            ):
-                self.fill_table(get_folders(
-                    login=self.login,
-                    token=self.token
-                ))
-
-    def update_version(self):
-        row = self.folders_tableWidget.currentRow()
-        if self.folders_tableWidget.item(row, 0) is not None:
-            if update_version(login=self.login, path=self.folders_tableWidget.item(row, 0).text(),
-                              version=self.folders_tableWidget.item(row, 1).text(), token=self.token):
-                self.fill_table(get_folders(
-                    login=self.login,
-                    token=self.token
-                ))
-
-    def download_version(self):
-        row = self.folders_tableWidget.currentRow()
-        if self.folders_tableWidget.item(row, 0) is not None:
-            if download_version(login=self.login, path=self.folders_tableWidget.item(row, 0).text(), token=self.token,
-                                version=self.folders_tableWidget.item(row, 1).text()):
-                if make_actual(
+            if show_verification_dialog('Delete version', 'Are you sure you want to delete this version?\n'
+                                                          'All synchs with it will be terminated.\n'
+                                                          'This action can`t be canceled.'):
+                if delete_version(
                         login=self.login,
                         path=self.folders_tableWidget.item(row, 0).text(),
                         version=self.folders_tableWidget.item(row, 1).text(),
@@ -197,6 +172,44 @@ class WPWindow(QMainWindow):
                         login=self.login,
                         token=self.token
                     ))
+
+    def update_version(self):
+        row = self.folders_tableWidget.currentRow()
+        if self.folders_tableWidget.item(row, 0) is not None:
+            if show_verification_dialog('Update version', 'Are you sure you want to update this version?\n'
+                                                          'The existing save will be rewrote.'):
+                if update_version(
+                        login=self.login,
+                        path=self.folders_tableWidget.item(row, 0).text(),
+                        version=self.folders_tableWidget.item(row, 1).text(),
+                        token=self.token
+                ):
+                    self.fill_table(get_folders(
+                        login=self.login,
+                        token=self.token
+                    ))
+
+    def download_version(self):
+        row = self.folders_tableWidget.currentRow()
+        if self.folders_tableWidget.item(row, 0) is not None:
+            if show_verification_dialog('Download version', 'Are you sure you want to download this version?\n'
+                                                            'The existing local files will be rewrote.'):
+                if download_version(
+                        login=self.login,
+                        path=self.folders_tableWidget.item(row, 0).text(),
+                        token=self.token,
+                        version=self.folders_tableWidget.item(row, 1).text()
+                ):
+                    if make_actual(
+                            login=self.login,
+                            path=self.folders_tableWidget.item(row, 0).text(),
+                            version=self.folders_tableWidget.item(row, 1).text(),
+                            token=self.token
+                    ):
+                        self.fill_table(get_folders(
+                            login=self.login,
+                            token=self.token
+                        ))
 
     def synchronize(self):
         row = self.folders_tableWidget.currentRow()
@@ -213,12 +226,16 @@ class WPWindow(QMainWindow):
                     if other_user == self.login:
                         show_dialog('Impossible operation', 'You can`t synchronize folder with yourself')
                         return
-                    synchronize(
-                        current_user=self.login,
-                        current_folder=self.folders_tableWidget.item(row, 0).text(),
-                        other_user=other_user,
-                        token=self.token
-                    )
+                    if show_verification_dialog('Synchronize folder',
+                                                f'Are you sure you want to synchronize this folder with'
+                                                f'{other_user}? This user will see your login, the absolute path to'
+                                                f'this folder, see some of its contents and make changes to it.'):
+                        synchronize(
+                            current_user=self.login,
+                            current_folder=self.folders_tableWidget.item(row, 0).text(),
+                            other_user=other_user,
+                            token=self.token
+                        )
             else:
                 show_dialog('Invalid operation', 'Folder you want to synchronize should be actual')
 
@@ -228,16 +245,25 @@ class WPWindow(QMainWindow):
             font = QtGui.QFont()
             font.setBold(True)
             if not (self.folders_tableWidget.item(row, 0).font() == font):
-                if make_actual(
+                if show_verification_dialog('Make version actual',
+                                            'Are you sure you want to make this version actual?\n'
+                                            'It will be uploaded now.'):
+                    update_version(
                         login=self.login,
                         path=self.folders_tableWidget.item(row, 0).text(),
                         version=self.folders_tableWidget.item(row, 1).text(),
                         token=self.token
-                ):
-                    self.fill_table(get_folders(
-                        login=self.login,
-                        token=self.token
-                    ))
+                    )
+                    if make_actual(
+                            login=self.login,
+                            path=self.folders_tableWidget.item(row, 0).text(),
+                            version=self.folders_tableWidget.item(row, 1).text(),
+                            token=self.token
+                    ):
+                        self.fill_table(get_folders(
+                            login=self.login,
+                            token=self.token
+                        ))
 
     def notifications(self, data):
         if data['type'] == 'request_to_synchronize':
@@ -253,27 +279,19 @@ class WPWindow(QMainWindow):
 
     @QtCore.pyqtSlot()
     def change_password(self):
-        self.cp_window = ui_change_password.CPWindow(self.login, self.token)
+        self.cp_window = ui_change_password.CPWindow(self)
         self.cp_window.show()
 
     @QtCore.pyqtSlot()
     def change_mail(self):
-        self.ce_window = ui_change_email.CEWindow(self.login, self.token)
+        self.ce_window = ui_change_email.CEWindow(self)
         self.ce_window.show()
 
     @QtCore.pyqtSlot()
     def delete_account(self):
-        verify = QMessageBox()
-        verify.setWindowTitle('Delete account')
-        verify.setText('Are you sure you want to delete your account?')
-        verify.setIcon(QMessageBox.Question)
-        verify.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        verify.setDefaultButton(QMessageBox.No)
-        verify.buttonClicked.connect(self.delete_dialog_action)
-        verify.exec_()
-
-    def delete_dialog_action(self, button):
-        if button.text() == '&Yes':
+        self.setEnabled(False)
+        if show_verification_dialog('Delete account', 'Are you sure you want to delete your account?\n'
+                                                      'This action can`t be canceled.'):
             if delete_user(
                     login=self.login,
                     token=self.token,
@@ -281,6 +299,7 @@ class WPWindow(QMainWindow):
             ):
                 self.__siw.login_LineEdit.setText('')
                 self.close()
+        self.setEnabled(True)
 
     @QtCore.pyqtSlot()
     def show_synchronized(self):

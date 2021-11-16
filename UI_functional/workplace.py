@@ -1,8 +1,8 @@
 import shutil
 import time
-
 import requests
 import os
+from os.path import join
 import zipfile
 import json
 import bcrypt
@@ -51,7 +51,7 @@ def check_actuality(login, json_data, token):
             )
             if check_request(request):
                 to_change = request.json()
-                if len(to_change['folder']) > 0:
+                if len(to_change['folder']):
                     return request.json()
     return None
 
@@ -155,7 +155,7 @@ def upload_folder(login, path, version, token):
     zip_folder = zipfile.ZipFile(zip_name, 'w')
     for root, dirs, files in os.walk(path):
         for file in files:
-            zip_folder.write(os.path.join(root, file))
+            zip_folder.write(join(root, file))
     zip_folder.close()
 
     # отправляем архив
@@ -264,6 +264,8 @@ def download_version(login, path, token, version=None, flag=False):
         )
         if check_request(request):
             version = request.content.decode('UTF-8')
+        else:
+            return
     request = requests.get(
         f'{PROTOCOL}://{IP}:{PORT}/download_folder/',
         params={
@@ -276,23 +278,34 @@ def download_version(login, path, token, version=None, flag=False):
     )
     if check_request(request):
         for file in os.listdir(path):
-            if os.path.isdir(os.path.join(path, file)):
-                shutil.rmtree(os.path.join(path, file))
+            if os.path.isdir(join(path, file)):
+                shutil.rmtree(join(path, file))
             else:
-                os.remove(os.path.join(path, file))
+                os.remove(join(path, file))
 
         temp = str(time.time())
-        archive_path = os.path.join(path, f'{temp}.zip')
+        archive_path = join(path, f'{temp}.zip')
         archive = open(archive_path, 'wb')
         archive.write(request.content)
         archive.close()
 
+        arch_data = {}
         archive = zipfile.ZipFile(archive_path, 'r')
+        for file in archive.namelist():
+            arch_data[file] = time.mktime(tuple(list(archive.getinfo(file).date_time) + [0, 0, 0]))
         for file in archive.namelist():
             if os.path.basename(file):
                 archive.extract(file, '/')
         archive.close()
         os.remove(archive_path)
+        for root, dirs, files in os.walk(path):
+            for file in files:
+                path_file = join(root, file)
+                os.utime(
+                    path_file,
+                    (arch_data[path_file[path_file.find('/') + 1:]],
+                     arch_data[path_file[path_file.find('/') + 1:]])
+                )
         return True
     return False
 

@@ -21,47 +21,47 @@ class ASWindow(QMainWindow):
         font = QtGui.QFont()
         font.setPointSize(12)
 
-        self.descLabel = QtWidgets.QLabel(self)
-        self.descLabel.setGeometry(10, 3, 390, 180)
-        self.descLabel.setFont(font)
-        self.descLabel.setText(f"<h4 style='text-align: justify;'>User <span style='color: #999999;'>"
-                               f"<em>{self.__text['current_user']}</em></span> want to synchronize his local "
-                               f"folder<br> <span style='color: #999999;'><em>{self.__text['current_folder']}"
-                               f"</em></span> with you.</h4><p style='text-align: justify;'>To accept the request, "
-                               f"select the appropriate folder<br> from the list of relevant ones below. Now and in"
-                               f"<br> the future, during authorization, the contents of<br> your folder will be "
-                               f"automatically updated according<br> to the contents of the user`s folder <strong>"
-                               f"{self.__text['current_user']}</strong>. If the<br> selected folder is no longer "
-                               f"relevant, the connection<br> with <strong>{self.__text['current_user']}"
-                               f"</strong> will be terminated.</p>")
+        self.desc_Label = QtWidgets.QLabel(self)
+        self.desc_Label.setGeometry(10, 3, 390, 180)
+        self.desc_Label.setFont(font)
+        self.desc_Label.setText(f"<h4 style='text-align: justify;'>User <span style='color: #999999;'>"
+                                f"<em>{self.__text['current_user']}</em></span> want to synchronize his local "
+                                f"folder<br> <span style='color: #999999;'><em>{self.__text['current_folder']}"
+                                f"</em></span> with you.</h4><p style='text-align: justify;'>To accept the request, "
+                                f"select the appropriate folder<br> from the list of relevant ones below. Now and in"
+                                f"<br> the future, during authorization, the contents of<br> your folder will be "
+                                f"automatically updated according<br> to the contents of the user`s folder <strong>"
+                                f"{self.__text['current_user']}</strong>. If the<br> selected folder is no longer "
+                                f"relevant, the connection<br> with <strong>{self.__text['current_user']}"
+                                f"</strong> will be terminated.</p>")
 
-        self.acceptButton = QtWidgets.QPushButton(self)
-        self.acceptButton.setGeometry(240, 223, 70, 30)
-        self.acceptButton.setText('Accept')
-        self.acceptButton.clicked.connect(self.accept)
+        self.accept_Button = QtWidgets.QPushButton(self)
+        self.accept_Button.setGeometry(240, 223, 70, 30)
+        self.accept_Button.setText('Accept')
+        self.accept_Button.clicked.connect(self.accept)
 
-        self.denyButton = QtWidgets.QPushButton(self)
-        self.denyButton.setGeometry(320, 223, 70, 30)
-        self.denyButton.setText('Deny')
-        self.denyButton.clicked.connect(self.deny)
+        self.deny_Button = QtWidgets.QPushButton(self)
+        self.deny_Button.setGeometry(320, 223, 70, 30)
+        self.deny_Button.setText('Deny')
+        self.deny_Button.clicked.connect(self.deny)
 
-        self.listCBox = QtWidgets.QComboBox(self)
-        self.listCBox.setGeometry(10, 188, 380, 25)
+        self.list_checkBox = QtWidgets.QComboBox(self)
+        self.list_checkBox.setGeometry(10, 188, 380, 25)
         check_font = QtGui.QFont()
         check_font.setBold(True)
         for i in range(self.__wpw.folders_tableWidget.rowCount()):
             if not self.__wpw.folders_tableWidget.item(i, 0) is None:
                 if self.__wpw.folders_tableWidget.item(i, 0).font() == check_font:
                     self.listCBox.addItem(self.__wpw.folders_tableWidget.item(i, 0).text())
-        if not self.listCBox.count():
-            self.listCBox.addItem('Empty list')
-            self.listCBox.setEnabled(False)
-            self.acceptButton.setEnabled(False)
+        if not self.list_checkBox.count():
+            self.list_checkBox.addItem('Empty list')
+            self.list_checkBox.setEnabled(False)
+            self.accept_Button.setEnabled(False)
 
     def accept(self):
         self.__socket.send_answer({
             'current_user': self.__text['other_user'],
-            'current_folder': self.listCBox.currentText(),
+            'current_folder': self.list_checkBox.currentText(),
             'current_mac': get_mac(),
             'choice': True,
             'other_user': self.__text['current_user'],

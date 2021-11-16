@@ -18,16 +18,16 @@ class SIWindow(QMainWindow):
         font = QtGui.QFont()
         font.setPointSize(10)
 
-        self.login_LineEdit = QtWidgets.QLineEdit(self)
-        self.login_LineEdit.setGeometry(10, 36, 260, 31)
-        self.login_LineEdit.setFont(font)
-        self.login_LineEdit.setPlaceholderText('Enter your login')
+        self.login_lineEdit = QtWidgets.QLineEdit(self)
+        self.login_lineEdit.setGeometry(10, 36, 260, 31)
+        self.login_lineEdit.setFont(font)
+        self.login_lineEdit.setPlaceholderText('Enter your login')
 
-        self.password_LineEdit = QtWidgets.QLineEdit(self)
-        self.password_LineEdit.setGeometry(10, 76, 260, 31)
-        self.password_LineEdit.setFont(font)
-        self.password_LineEdit.setEchoMode(QtWidgets.QLineEdit.Password)
-        self.password_LineEdit.setPlaceholderText('Enter your password')
+        self.password_lineEdit = QtWidgets.QLineEdit(self)
+        self.password_lineEdit.setGeometry(10, 76, 260, 31)
+        self.password_lineEdit.setFont(font)
+        self.password_lineEdit.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.password_lineEdit.setPlaceholderText('Enter your password')
 
         self.enter_Button = QtWidgets.QPushButton(self)
         self.enter_Button.setGeometry(10, 116, 140, 30)
@@ -42,12 +42,12 @@ class SIWindow(QMainWindow):
         create_menu.un_menu(self)
 
     def enter(self):
-        login = self.login_LineEdit.text()
-        password = self.password_LineEdit.text()
+        login = self.login_lineEdit.text()
+        password = self.password_lineEdit.text()
         if login and password:
             token = auth(login, password)
             if json.loads(token)['token']:
-                self.password_LineEdit.setText('')
+                self.password_lineEdit.setText('')
                 self.p_window = ui_workplace.WPWindow(login, token, self)
                 self.p_window.show()
                 self.hide()
@@ -55,11 +55,11 @@ class SIWindow(QMainWindow):
                 call_ui.show_dialog('Wrong data!', 'The entered login or password is incorrect.')
         else:
             call_ui.show_dialog('Wrong data!', 'The entered login or password is incorrect.')
-        self.password_LineEdit.setText('')
+        self.password_lineEdit.setText('')
 
     def register(self):
-        self.login_LineEdit.setText('')
-        self.password_LineEdit.setText('')
+        self.login_lineEdit.setText('')
+        self.password_lineEdit.setText('')
         self.su_window = ui_sign_up.SUWindow(self)
         self.su_window.show()
         self.hide()

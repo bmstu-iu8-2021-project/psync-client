@@ -1,11 +1,11 @@
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QAbstractItemView, QTableWidget, QTableWidgetItem, QCheckBox
 from PyQt5.QtWidgets import QMainWindow
 
-from UI_functional.workplace import update_actual_folder, make_no_actual, get_folders
+from UI_functional.workplace import update_actual_folder, make_no_actual, get_folders, check_synchronized
 from UI import ui_synchronized
-from UI_functional.workplace import check_synchronized
+from UI.call_ui import show_dialog
 
 
 class TUWindow(QMainWindow):
@@ -17,8 +17,8 @@ class TUWindow(QMainWindow):
         self.__flag = False
         self.__login = self.__wpw.login
         self.__token = self.__wpw.token
-
         self.__wpw.setEnabled(False)
+
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
 
         self.setWindowTitle('SyncGad • Update folders')
@@ -33,10 +33,14 @@ class TUWindow(QMainWindow):
         self.to_update_tableWidget = QTableWidget(self)
         self.create_table()
 
+        QTimer.singleShot(1, lambda: show_dialog('Notification',
+                                                 'Some of your actual folders have been changed locally.\n'
+                                                 'Update them, otherwise they will no longer be\n'
+                                                 'actual and all their syncs will be broken', 2))
+
     def create_table(self):
         columns = 2
         rows = 10
-        # 470 = 20 + 450
         self.to_update_tableWidget.setGeometry(
             QtCore.QRect(10, 10, 450, self.to_update_tableWidget.verticalHeader().height() * (rows + 1) + 15))
         self.to_update_tableWidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
@@ -104,6 +108,11 @@ class TUWindow(QMainWindow):
                     wpw=self.__wpw,
                 )
                 self.tswindow.show()
+
+    # def show_dialog(self):
+    #     show_dialog('Notification', 'Some of your actual folders have been changed locally.\n'
+    #                                 'Update them, otherwise they will no longer be\n'
+    #                                 'actual and all their syncs will be broken', 2)
 
     def closeEvent(self, event):
         if not self.__flag:

@@ -1,10 +1,10 @@
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QMainWindow, QAbstractItemView, QTableWidget, QTableWidgetItem, QCheckBox
 
 from UI_functional.synchronized import terminate_sync, synchronize_folder
 from UI_functional.workplace import download_version, get_synchronized
-from UI.call_ui import show_dialog
+from UI.call_ui import show_dialog, show_verification_dialog
 
 
 class SWindow(QMainWindow):
@@ -49,6 +49,11 @@ class SWindow(QMainWindow):
             self.sync_tableWidget = QTableWidget(self)
             self.create_update_table()
             self.fill_update_table()
+
+            QTimer.singleShot(1, lambda: show_dialog('Notification',
+                                                     'Some of your synced folders have changed. Merge\n'
+                                                     'them with matching ones, otherwise their syncs\n'
+                                                     'will be broken', 2))
 
     def create_static_table(self):
         columns = 4
@@ -164,21 +169,22 @@ class SWindow(QMainWindow):
         self.close()
 
     def terminate_sync(self):
-        # TODO: ask user to confirm action
         row = self.sync_tableWidget.currentRow()
         if self.sync_tableWidget.item(row, 0) is not None:
-            if terminate_sync(
-                    current_login=self.__wpw.login,
-                    other_login=self.sync_tableWidget.item(row, 0).text(),
-                    current_folder=self.sync_tableWidget.item(row, 1).text(),
-                    other_folder=self.sync_tableWidget.item(row, 2).text(),
-                    token=self.__wpw.token
-            ):
-                self.__data = get_synchronized(
-                    login=self.__login,
-                    token=self.__token
-                )
-                self.fill_static_table()
+            if show_verification_dialog('Terminate synchronization', 'Are you sure you want to '
+                                                                     'terminate this version?'):
+                if terminate_sync(
+                        current_login=self.__wpw.login,
+                        other_login=self.sync_tableWidget.item(row, 0).text(),
+                        current_folder=self.sync_tableWidget.item(row, 1).text(),
+                        other_folder=self.sync_tableWidget.item(row, 2).text(),
+                        token=self.__wpw.token
+                ):
+                    self.__data = get_synchronized(
+                        login=self.__login,
+                        token=self.__token
+                    )
+                    self.fill_static_table()
 
     def closeEvent(self, event):
         if not self.__mode:
