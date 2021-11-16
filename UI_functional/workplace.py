@@ -1,4 +1,6 @@
 import shutil
+import time
+
 import requests
 import os
 import zipfile
@@ -279,7 +281,8 @@ def download_version(login, path, token, version=None, flag=False):
             else:
                 os.remove(os.path.join(path, file))
 
-        archive_path = os.path.join(path, 'archive.zip')
+        temp = str(time.time())
+        archive_path = os.path.join(path, f'{temp}.zip')
         archive = open(archive_path, 'wb')
         archive.write(request.content)
         archive.close()

@@ -4,6 +4,8 @@ from PyQt5.QtWidgets import QAbstractItemView, QTableWidget, QTableWidgetItem, Q
 from PyQt5.QtWidgets import QMainWindow
 
 from UI_functional.workplace import update_actual_folder, make_no_actual, get_folders
+from UI import ui_synchronized
+from UI_functional.workplace import check_synchronized
 
 
 class TUWindow(QMainWindow):
@@ -89,6 +91,20 @@ class TUWindow(QMainWindow):
         self.__flag = True
         self.close()
 
+    def check_synchronized(self):
+        to_sync = check_synchronized(
+            login=self.__login,
+            token=self.__token
+        )
+        if to_sync is not None:
+            if len(to_sync['items']) != 0:
+                self.tswindow = ui_synchronized.SWindow(
+                    mode=False,
+                    data=to_sync,
+                    wpw=self.__wpw,
+                )
+                self.tswindow.show()
+
     def closeEvent(self, event):
         if not self.__flag:
             for i in range(self.to_update_tableWidget.rowCount()):
@@ -103,3 +119,4 @@ class TUWindow(QMainWindow):
                 token=self.__token
             ))
         self.__wpw.setEnabled(True)
+        self.check_synchronized()

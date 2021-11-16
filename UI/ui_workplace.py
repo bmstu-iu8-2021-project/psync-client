@@ -6,7 +6,7 @@ from PyQt5.QtGui import QIcon
 from UI import ui_about, create_menu, ui_change_password, ui_change_email, ui_to_update, ui_accept_synchronize
 from UI import ui_synchronized
 from UI_functional.workplace import add_version, update_version, delete_version, delete_user, get_folders, make_actual
-from UI_functional.workplace import check_actuality, download_version, synchronize, check_synchronized, get_synchronized
+from UI_functional.workplace import check_actuality, download_version, synchronize, get_synchronized
 from UI.call_ui import show_dialog
 from connection import sockets
 
@@ -71,7 +71,7 @@ class WPWindow(QMainWindow):
 
         self.folders_tableWidget = QTableWidget(self)
         self.create_table()
-        self.check_synchronized()
+        # self.check_synchronized()
 
         create_menu.du_menu(self)
 
@@ -141,20 +141,6 @@ class WPWindow(QMainWindow):
         if to_change is not None:
             self.tc_window = ui_to_update.TUWindow(to_change['folder'], self)
             self.tc_window.show()
-
-    def check_synchronized(self):
-        to_sync = check_synchronized(
-            login=self.login,
-            token=self.token
-        )
-        if to_sync is not None:
-            if len(to_sync['items']) != 0:
-                self.tswindow = ui_synchronized.SWindow(
-                    mode=False,
-                    data=to_sync,
-                    wpw=self,
-                )
-                self.tswindow.show()
 
     def add_folder(self):
         path_name = QFileDialog.getExistingDirectory(self, 'Choose the folder to add',

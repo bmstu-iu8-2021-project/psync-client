@@ -144,15 +144,14 @@ class SWindow(QMainWindow):
                             other_folder=self.sync_tableWidget.item(i, 3).text(),
                             token=self.__wpw.token
                     ):
-                        print('should be synchronizes')
-                        # if not download_version(
-                        #         login=self.__login,
-                        #         path=self.sync_tableWidget.item(i, 2).text(),
-                        #         token=self.__token,
-                        #         flag=True
-                        # ):
-                        #     show_dialog('Error', 'Error occurred while synchronizing.\nProcess was stopped.')
-                        #     break
+                        if not download_version(
+                                login=self.__login,
+                                path=self.sync_tableWidget.item(i, 2).text(),
+                                token=self.__token,
+                                flag=True
+                        ):
+                            show_dialog('Error', 'Error occurred while synchronizing.\nProcess was stopped.')
+                            break
                 else:
                     terminate_sync(
                         current_login=self.__login,
