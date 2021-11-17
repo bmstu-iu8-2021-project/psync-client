@@ -4,6 +4,7 @@ from PyQt5.QtGui import QIcon
 
 from UI import ui_about, create_menu, ui_change_password, ui_change_email, ui_to_update, ui_accept_synchronize
 from UI import ui_synchronized
+from UI_functional.synchronized import synchronize_folder
 from UI_functional.workplace import add_version, update_version, delete_version, delete_user, get_folders, make_actual
 from UI_functional.workplace import check_actuality, download_version, synchronize, get_synchronized
 from UI.call_ui import show_dialog, show_verification_dialog
@@ -38,7 +39,7 @@ class WPWindow(QMainWindow):
         self.add_Button.setIcon(QIcon('icons/workplace/add_folder.svg'))
         self.add_Button.setIconSize(QtCore.QSize(30, 30))
         self.add_Button.setToolTip('Add new folder or version')
-        self.add_Button.clicked.connect(self.add_folder)
+        self.add_Button.clicked.connect(self.add_version)
 
         self.delete_Button = QtWidgets.QPushButton(self)
         self.delete_Button.setGeometry(530, 125, 40, 40)
@@ -140,7 +141,7 @@ class WPWindow(QMainWindow):
             self.tc_window = ui_to_update.TUWindow(to_change['folder'], self)
             self.tc_window.show()
 
-    def add_folder(self):
+    def add_version(self):
         path_name = QFileDialog.getExistingDirectory(self, 'Choose the folder to add',
                                                      options=QtWidgets.QFileDialog.DontUseNativeDialog)
         if path_name:
@@ -227,8 +228,8 @@ class WPWindow(QMainWindow):
                         show_dialog('Impossible operation', 'You can`t synchronize folder with yourself')
                         return
                     if show_verification_dialog('Synchronize folder',
-                                                f'Are you sure you want to synchronize this folder with'
-                                                f'{other_user}? This user will see your login, the absolute path to'
+                                                f'Are you sure you want to synchronize this folder with '
+                                                f'{other_user}? This user will see your login, the absolute path to '
                                                 f'this folder, see some of its contents and make changes to it.'):
                         synchronize(
                             current_user=self.login,
@@ -247,7 +248,7 @@ class WPWindow(QMainWindow):
             if not (self.folders_tableWidget.item(row, 0).font() == font):
                 if show_verification_dialog('Make version actual',
                                             'Are you sure you want to make this version actual?\n'
-                                            'It will be uploaded now.'):
+                                            'It will be updated now.'):
                     update_version(
                         login=self.login,
                         path=self.folders_tableWidget.item(row, 0).text(),
@@ -273,6 +274,20 @@ class WPWindow(QMainWindow):
             text = f"User {data['current_user']} %s your request to synchronize"
             if data['choice']:
                 text = text % 'accepted'
+                if synchronize_folder(
+                        current_login=self.login,
+                        other_login=data['current_user'],
+                        current_folder=data['other_folder'],
+                        other_folder=data['current_folder'],
+                        token=self.token
+                ):
+                    if not download_version(
+                            login=self.login,
+                            path=data['other_folder'],
+                            token=self.token,
+                            flag=True
+                    ):
+                        show_dialog('Error', 'Error occurred while synchronizing.\nProcess was stopped.')
             else:
                 text = text % 'denied'
             show_dialog('Answer', text, 2)
@@ -297,7 +312,7 @@ class WPWindow(QMainWindow):
                     token=self.token,
                     window=self
             ):
-                self.__siw.login_LineEdit.setText('')
+                self.__siw.login_lineEdit.setText('')
                 self.close()
         self.setEnabled(True)
 

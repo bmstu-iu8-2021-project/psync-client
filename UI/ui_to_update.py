@@ -101,18 +101,13 @@ class TUWindow(QMainWindow):
             token=self.__token
         )
         if to_sync is not None:
-            if len(to_sync['items']) != 0:
+            if len(to_sync) != 0:
                 self.tswindow = ui_synchronized.SWindow(
                     mode=False,
                     data=to_sync,
                     wpw=self.__wpw,
                 )
                 self.tswindow.show()
-
-    # def show_dialog(self):
-    #     show_dialog('Notification', 'Some of your actual folders have been changed locally.\n'
-    #                                 'Update them, otherwise they will no longer be\n'
-    #                                 'actual and all their syncs will be broken', 2)
 
     def closeEvent(self, event):
         if not self.__flag:

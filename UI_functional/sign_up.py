@@ -18,9 +18,7 @@ def register(login, mail, password):
             show_dialog('Wrong data!', 'This login seems to be taken.')
         elif requests.get(
                 f'{PROTOCOL}://{IP}:{PORT}/find_email/',
-                params={
-                    'email': mail
-                }
+                params={'email': mail}
         ).text == 'False':
             show_dialog('Wrong data!', 'This email seems to be taken.')
         else:

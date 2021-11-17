@@ -1,6 +1,10 @@
 from PyQt5 import QtWidgets, QtGui
+from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QMainWindow
 
+from UI.call_ui import show_dialog
+from UI_functional.synchronized import synchronize_folder
+from UI_functional.workplace import download_version
 from data_processing.get_folder_data import get_mac
 
 
@@ -52,7 +56,7 @@ class ASWindow(QMainWindow):
         for i in range(self.__wpw.folders_tableWidget.rowCount()):
             if not self.__wpw.folders_tableWidget.item(i, 0) is None:
                 if self.__wpw.folders_tableWidget.item(i, 0).font() == check_font:
-                    self.listCBox.addItem(self.__wpw.folders_tableWidget.item(i, 0).text())
+                    self.list_checkBox.addItem(self.__wpw.folders_tableWidget.item(i, 0).text())
         if not self.list_checkBox.count():
             self.list_checkBox.addItem('Empty list')
             self.list_checkBox.setEnabled(False)
@@ -70,6 +74,23 @@ class ASWindow(QMainWindow):
         })
         self.__flag = False
         self.close()
+        QTimer().singleShot(1500, self.__synchronize())
+
+    def __synchronize(self):
+        if synchronize_folder(
+                current_login=self.login,
+                other_login=self.__text['current_user'],
+                current_folder=self.list_checkBox.currentText(),
+                other_folder=self.__text['current_folder'],
+                token=self.token
+        ):
+            if not download_version(
+                    login=self.login,
+                    path=self.list_checkBox.currentText(),
+                    token=self.token,
+                    flag=True
+            ):
+                show_dialog('Error', 'Error occurred while synchronizing.\nProcess was stopped.')
 
     def deny(self):
         self.__socket.send_answer({

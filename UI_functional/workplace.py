@@ -277,6 +277,8 @@ def download_version(login, path, token, version=None, flag=False):
         headers=head
     )
     if check_request(request):
+        if not os.path.exists(path):
+            os.mkdir(path)
         for file in os.listdir(path):
             if os.path.isdir(join(path, file)):
                 shutil.rmtree(join(path, file))
