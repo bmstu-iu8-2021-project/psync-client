@@ -46,13 +46,16 @@ class SIWindow(QMainWindow):
         password = self.password_lineEdit.text()
         if login and password:
             token = auth(login, password)
-            if json.loads(token)['token']:
-                self.password_lineEdit.setText('')
-                self.p_window = ui_workplace.WPWindow(login, token, self)
-                self.p_window.show()
-                self.hide()
+            if token is not None:
+                if json.loads(token)['token']:
+                    self.password_lineEdit.setText('')
+                    self.p_window = ui_workplace.WPWindow(login, token, self)
+                    self.p_window.show()
+                    self.hide()
+                else:
+                    call_ui.show_dialog('Wrong data!', 'The entered login or password is incorrect.')
             else:
-                call_ui.show_dialog('Wrong data!', 'The entered login or password is incorrect.')
+                call_ui.show_dialog('Connection error!', 'Check your internet connection', 1)
         else:
             call_ui.show_dialog('Wrong data!', 'The entered login or password is incorrect.')
         self.password_lineEdit.setText('')

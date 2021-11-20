@@ -6,13 +6,15 @@ from data_processing.get_folder_data import get_mac
 
 
 def auth(login, password):
-    request = requests.get(
-        f'{PROTOCOL}://{IP}:{PORT}/auth/',
-        params={
-            'login': login,
-            'password': password,
-            'mac': get_mac()
-        })
-    if check_request(request):
-        return request.content
-    return None
+    try:
+        request = requests.get(
+            f'{PROTOCOL}://{IP}:{PORT}/auth/',
+            params={
+                'login': login,
+                'password': password,
+                'mac': get_mac()
+            })
+        if check_request(request):
+            return request.content
+    except requests.ConnectionError:
+        return None
