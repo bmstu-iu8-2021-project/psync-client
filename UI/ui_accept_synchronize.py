@@ -78,7 +78,7 @@ class ASWindow(QMainWindow):
 
     def __synchronize(self):
         if synchronize_folder(
-                current_login=self.login,
+                current_login=self.__wpw.login,
                 other_login=self.__text['current_user'],
                 current_folder=self.list_checkBox.currentText(),
                 other_folder=self.__text['current_folder'],

@@ -57,7 +57,7 @@ def check_actuality(login, json_data, token):
 
 
 def make_no_actual(login, path, token):
-    head = {'Content-Type': 'application/json', 'Authorization': token}
+    head = {'Authorization': token}
     request = requests.get(
         f'{PROTOCOL}://{IP}:{PORT}/make_no_actual/',
         params={
@@ -71,7 +71,7 @@ def make_no_actual(login, path, token):
 
 
 def update_actual_folder(login, path, token):
-    head = {'Content-Type': 'application/json', 'Authorization': token}
+    head = {'Authorization': token}
     request = requests.get(
         f'{PROTOCOL}://{IP}:{PORT}/get_actual_version/',
         params={
@@ -161,9 +161,7 @@ def upload_folder(login, path, version, token):
     # отправляем архив
     request = requests.get(
         f'{PROTOCOL}://{IP}:{PORT}/upload_folder/',
-        files={
-            'file': (zip_name, open(zip_name, 'rb'))
-        },
+        files={'file': (zip_name, open(zip_name, 'rb'))},
         headers={'Authorization': token},
     )
 
@@ -175,7 +173,7 @@ def upload_folder(login, path, version, token):
 
 
 def delete_version(login, path, version, token):
-    head = {'Content-Type': 'application/json', 'Authorization': token}
+    head = {'Authorization': token}
     request = requests.get(
         f'{PROTOCOL}://{IP}:{PORT}/delete_version/',
         params={
@@ -196,7 +194,7 @@ def update_version(login, path, version, token):
             version=version,
             token=token
     ):
-        head = {'Content-Type': 'application/json', 'Authorization': token}
+        head = {'Authorization': token}
         request = requests.get(
             f'{PROTOCOL}://{IP}:{PORT}/update_version/',
             params={
@@ -213,7 +211,7 @@ def update_version(login, path, version, token):
 
 def delete_user(login, token, window):
     count = 0
-    head = {'Content-Type': 'application/json', 'Authorization': token}
+    head = {'Authorization': token}
     request = requests.get(
         f'{PROTOCOL}://{IP}:{PORT}/get_password/',
         params={
@@ -232,12 +230,9 @@ def delete_user(login, token, window):
             if flag and pass_input:
                 count += 1
                 if bcrypt.checkpw(pass_input.encode('UTF-8'), password):
-                    head = {'Content-Type': 'application/json', 'Authorization': token}
                     request = requests.get(
                         f'{PROTOCOL}://{IP}:{PORT}/delete_user/',
-                        params={
-                            'login': login
-                        },
+                        params={'login': login},
                         headers=head
                     )
                     return check_request(request)
@@ -251,7 +246,7 @@ def delete_user(login, token, window):
 # TODO: put in in thread
 # флаг равен 1, когда нужно актуальная версия, при этом имя версии не передаем
 def download_version(login, path, token, version=None, flag=False):
-    head = {'Content-Type': 'application/json', 'Authorization': token}
+    head = {'Authorization': token}
     if flag:
         request = requests.get(
             f'{PROTOCOL}://{IP}:{PORT}/get_actual_version/',
@@ -297,7 +292,7 @@ def download_version(login, path, token, version=None, flag=False):
             arch_data[file] = time.mktime(tuple(list(archive.getinfo(file).date_time) + [0, 0, 0]))
         for file in archive.namelist():
             if os.path.basename(file):
-                archive.extract(file, '/')
+                archive.extract(file, path[:path.find('/') + 1])
         archive.close()
         os.remove(archive_path)
         for root, dirs, files in os.walk(path):
@@ -313,7 +308,7 @@ def download_version(login, path, token, version=None, flag=False):
 
 
 def synchronize(current_user, current_folder, other_user, token):
-    head = {'Content-Type': 'application/json', 'Authorization': token}
+    head = {'Authorization': token}
     request = requests.get(
         f'{PROTOCOL}://{IP}:{PORT}/synchronize/',
         params={
@@ -332,7 +327,7 @@ def synchronize(current_user, current_folder, other_user, token):
 
 
 def make_actual(login, path, version, token):
-    head = {'Content-Type': 'application/json', 'Authorization': token}
+    head = {'Authorization': token}
     request = requests.get(
         f'{PROTOCOL}://{IP}:{PORT}/make_actual/',
         params={

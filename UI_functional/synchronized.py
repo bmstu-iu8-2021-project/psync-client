@@ -6,7 +6,7 @@ from data_processing.constants import PROTOCOL, IP, PORT
 
 
 def terminate_sync(current_login, other_id, current_folder, other_folder, token):
-    head = {'Content-Type': 'application/json', 'Authorization': token}
+    head = {'Authorization': token}
     request = requests.get(
         f'{PROTOCOL}://{IP}:{PORT}/terminate_sync/',
         params={
@@ -22,7 +22,7 @@ def terminate_sync(current_login, other_id, current_folder, other_folder, token)
 
 
 def synchronize_folder(current_login, current_folder, other_login, other_folder, token):
-    head = {'Content-Type': 'application/json', 'Authorization': token}
+    head = {'Authorization': token}
     request = requests.get(
         f'{PROTOCOL}://{IP}:{PORT}/synchronize_folder/',
         params={

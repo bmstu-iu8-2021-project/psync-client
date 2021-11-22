@@ -7,7 +7,7 @@ from UI.call_ui import show_dialog
 
 
 def change_mail(login, new_mail, password, token):
-    head = {'Content-Type': 'application/json', 'Authorization': token}
+    head = {'Authorization': token}
     request = requests.get(
         f'{PROTOCOL}://{IP}:{PORT}/get_password/',
         params={
@@ -35,7 +35,7 @@ def change_mail(login, new_mail, password, token):
 
 
 def change_password(login, old_password, new_password, token):
-    head = {'Content-Type': 'application/json', 'Authorization': token}
+    head = {'Authorization': token}
     request = requests.get(
         f'{PROTOCOL}://{IP}:{PORT}/get_password/',
         params={'login': login},
