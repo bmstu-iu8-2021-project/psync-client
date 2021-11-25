@@ -1,4 +1,5 @@
 import shutil
+import threading
 import time
 import requests
 import os
@@ -83,7 +84,6 @@ def update_actual_folder(login, path, token):
     )
     if check_request(request):
         version = request.content.decode('UTF-8')
-        # TODO: put in thread
         return update_version(
             login=login,
             path=path,
@@ -133,19 +133,19 @@ def add_version(login, path, version, token):
         if request.content.decode('UTF-8') == 'False':
             show_dialog('Conflict of versions!', 'Version with this name for this folder is already exist!')
         else:
-            if upload_folder(
-                    login=login,
-                    path=path,
-                    version=version,
-                    token=token
-            ):
-                # отправляем данные в бд
-                request = requests.get(
-                    f'{PROTOCOL}://{IP}:{PORT}/add_version/',
-                    data=json.dumps(folder_content),
-                    headers=head,
-                )
-                return check_request(request)
+            threading.Thread(name='upload_folder', target=upload_folder, kwargs={
+                'login': login,
+                'path': path,
+                'version': version,
+                'token': token
+            }).start()
+            # отправляем данные в бд
+            request = requests.get(
+                f'{PROTOCOL}://{IP}:{PORT}/add_version/',
+                data=json.dumps(folder_content),
+                headers=head,
+            )
+            return check_request(request)
     return False
 
 
@@ -168,8 +168,6 @@ def upload_folder(login, path, version, token):
     if check_request(request):
         # удаляем архив
         os.remove(zip_name)
-        return True
-    return False
 
 
 def delete_version(login, path, version, token):
@@ -188,25 +186,24 @@ def delete_version(login, path, version, token):
 
 
 def update_version(login, path, version, token):
-    if upload_folder(
-            login=login,
-            path=path,
-            version=version,
-            token=token
-    ):
-        head = {'Authorization': token}
-        request = requests.get(
-            f'{PROTOCOL}://{IP}:{PORT}/update_version/',
-            params={
-                'login': login,
-                'mac': get_mac(),
-                'path_file': path,
-                'version': version
-            },
-            headers=head
-        )
-        return check_request(request)
-    return False
+    threading.Thread(name='upload_folder', target=upload_folder, kwargs={
+        'login': login,
+        'path': path,
+        'version': version,
+        'token': token
+    }).start()
+    head = {'Authorization': token}
+    request = requests.get(
+        f'{PROTOCOL}://{IP}:{PORT}/update_version/',
+        params={
+            'login': login,
+            'mac': get_mac(),
+            'path_file': path,
+            'version': version
+        },
+        headers=head
+    )
+    return check_request(request)
 
 
 def delete_user(login, token, window):
@@ -243,7 +240,6 @@ def delete_user(login, token, window):
     return False
 
 
-# TODO: put in in thread
 # флаг равен 1, когда нужно актуальная версия, при этом имя версии не передаем
 def download_version(login, path, token, version=None, flag=False):
     head = {'Authorization': token}
@@ -303,26 +299,24 @@ def download_version(login, path, token, version=None, flag=False):
                     (arch_data[path_file[path_file.find('/') + 1:]],
                      arch_data[path_file[path_file.find('/') + 1:]])
                 )
-        return True
-    return False
 
 
-def synchronize(current_user, current_folder, other_user, token):
+def synchronize(sender_login, sender_folder, receiver_login, token):
     head = {'Authorization': token}
     request = requests.get(
         f'{PROTOCOL}://{IP}:{PORT}/synchronize/',
         params={
-            'current_user': current_user,
-            'current_folder': current_folder,
-            'current_mac': get_mac(),
-            'other_user': other_user,
+            'sender_login': sender_login,
+            'sender_folder': sender_folder,
+            'sender_mac': get_mac(),
+            'receiver_login': receiver_login,
             'room': 'users'
         },
         headers=head
     )
     if check_request(request):
         if request.content.decode('UTF-8') == 'False':
-            show_dialog('Unable to connect', f'User {other_user} is offline, unable to send request')
+            show_dialog('Unable to connect', f'User {receiver_login} is offline, unable to send request')
         return
 
 

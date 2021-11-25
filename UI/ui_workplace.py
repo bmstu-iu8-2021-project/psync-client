@@ -1,3 +1,5 @@
+import threading
+
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QMainWindow, QInputDialog, QFileDialog, QAbstractItemView, QTableWidget, QTableWidgetItem
 from PyQt5.QtGui import QIcon
@@ -195,22 +197,22 @@ class WPWindow(QMainWindow):
         if self.folders_tableWidget.item(row, 0) is not None:
             if show_verification_dialog('Download version', 'Are you sure you want to download this version?\n'
                                                             'The existing local files will be rewrote.'):
-                if download_version(
+                threading.Thread(name='download_version', target=download_version, kwargs={
+                    'login': self.login,
+                    'path': self.folders_tableWidget.item(row, 0).text(),
+                    'token': self.token,
+                    'version': self.folders_tableWidget.item(row, 1).text()
+                }).start()
+                if make_actual(
                         login=self.login,
                         path=self.folders_tableWidget.item(row, 0).text(),
-                        token=self.token,
-                        version=self.folders_tableWidget.item(row, 1).text()
+                        version=self.folders_tableWidget.item(row, 1).text(),
+                        token=self.token
                 ):
-                    if make_actual(
-                            login=self.login,
-                            path=self.folders_tableWidget.item(row, 0).text(),
-                            version=self.folders_tableWidget.item(row, 1).text(),
-                            token=self.token
-                    ):
-                        self.fill_table(get_folders(
-                            login=self.login,
-                            token=self.token
-                        ))
+                    self.fill_table(get_folders(
+                        login=self.login,
+                        token=self.token
+                    ))
 
     def synchronize(self):
         row = self.folders_tableWidget.currentRow()
@@ -218,23 +220,23 @@ class WPWindow(QMainWindow):
             check_font = QtGui.QFont()
             check_font.setBold(True)
             if self.folders_tableWidget.item(row, 0).font() == check_font:
-                other_user, flag = QInputDialog.getText(
+                receiver_login, flag = QInputDialog.getText(
                     self,
                     'Enter user`s name',
                     'Enter user name you want to synchronize with',
                 )
                 if flag:
-                    if other_user == self.login:
+                    if receiver_login == self.login:
                         show_dialog('Impossible operation', 'You can`t synchronize folder with yourself')
                         return
                     if show_verification_dialog('Synchronize folder',
                                                 f'Are you sure you want to synchronize this folder with '
-                                                f'{other_user}? This user will see your login, the absolute path to '
+                                                f'{receiver_login}? This user will see your login, the absolute path to '
                                                 f'this folder, see some of its contents and make changes to it.'):
                         synchronize(
-                            current_user=self.login,
-                            current_folder=self.folders_tableWidget.item(row, 0).text(),
-                            other_user=other_user,
+                            sender_login=self.login,
+                            sender_folder=self.folders_tableWidget.item(row, 0).text(),
+                            receiver_login=receiver_login,
                             token=self.token
                         )
             else:
@@ -271,23 +273,23 @@ class WPWindow(QMainWindow):
             self.as_window = ui_accept_synchronize.ASWindow(data, self)
             self.as_window.show()
         elif data['type'] == 'answer':
-            text = f"User {data['current_user']} %s your request to synchronize"
+            text = f"User {data['sender_login']} %s your request to synchronize"
             if data['choice']:
                 text = text % 'accepted'
+                # HERE
                 if synchronize_folder(
-                        current_login=self.login,
-                        other_login=data['current_user'],
-                        current_folder=data['other_folder'],
-                        other_folder=data['current_folder'],
+                        sender_login=self.login,
+                        sender_folder=data['receiver_folder'],
+                        receiver_id=data['sender_id'],
+                        receiver_folder=data['sender_folder'],
                         token=self.token
                 ):
-                    if not download_version(
-                            login=self.login,
-                            path=data['other_folder'],
-                            token=self.token,
-                            flag=True
-                    ):
-                        show_dialog('Error', 'Error occurred while synchronizing.\nProcess was stopped.')
+                    threading.Thread(name='download_version', target=download_version, kwargs={
+                        'login': self.login,
+                        'path': data['receiver_folder'],
+                        'token': self.token,
+                        'flag': True
+                    }).start()
             else:
                 text = text % 'denied'
             show_dialog('Answer', text, 2)

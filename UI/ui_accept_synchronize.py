@@ -1,3 +1,5 @@
+import threading
+
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QMainWindow
@@ -9,11 +11,11 @@ from data_processing.get_folder_data import get_mac
 
 
 class ASWindow(QMainWindow):
-    def __init__(self, text, wpw):
+    def __init__(self, data, wpw):
         super(ASWindow, self).__init__()
-        self.__text = text
+        self.__data = data
         self.__wpw = wpw
-        self.__socket = wpw.socket
+        self.__socket = self.__wpw.socket
         self.__flag = True
 
         self.__wpw.setEnabled(False)
@@ -29,14 +31,14 @@ class ASWindow(QMainWindow):
         self.desc_Label.setGeometry(10, 3, 390, 180)
         self.desc_Label.setFont(font)
         self.desc_Label.setText(f"<h4 style='text-align: justify;'>User <span style='color: #999999;'>"
-                                f"<em>{self.__text['current_user']}</em></span> want to synchronize his local "
-                                f"folder<br> <span style='color: #999999;'><em>{self.__text['current_folder']}"
+                                f"<em>{self.__data['sender_login']}</em></span> want to synchronize his local "
+                                f"folder<br> <span style='color: #999999;'><em>{self.__data['sender_folder']}"
                                 f"</em></span> with you.</h4><p style='text-align: justify;'>To accept the request, "
                                 f"select the appropriate folder<br> from the list of relevant ones below. Now and in"
                                 f"<br> the future, during authorization, the contents of<br> your folder will be "
                                 f"automatically updated according<br> to the contents of the user`s folder <strong>"
-                                f"{self.__text['current_user']}</strong>. If the<br> selected folder is no longer "
-                                f"relevant, the connection<br> with <strong>{self.__text['current_user']}"
+                                f"{self.__data['sender_login']}</strong>. If the<br> selected folder is no longer "
+                                f"relevant, the connection<br> with <strong>{self.__data['sender_login']}"
                                 f"</strong> will be terminated.</p>")
 
         self.accept_Button = QtWidgets.QPushButton(self)
@@ -63,40 +65,40 @@ class ASWindow(QMainWindow):
             self.accept_Button.setEnabled(False)
 
     def accept(self):
-        self.__socket.send_answer({
-            'current_user': self.__text['other_user'],
-            'current_folder': self.list_checkBox.currentText(),
-            'current_mac': get_mac(),
+        data = {
+            'sender_login': self.__data['receiver_login'],
+            'sender_folder': self.list_checkBox.currentText(),
+            'sender_mac': get_mac(),
             'choice': True,
-            'other_user': self.__text['current_user'],
-            'other_folder': self.__text['current_folder'],
-            'other_mac': self.__text['current_mac']
-        })
+            'receiver_login': self.__data['sender_login'],
+            'receiver_folder': self.__data['sender_folder'],
+            'receiver_id': self.__data['sender_id']
+        }
+        self.__socket.send_answer(data)
         self.__flag = False
         self.close()
-        QTimer().singleShot(1500, self.__synchronize())
+        QTimer().singleShot(1500, self.__synchronize)
 
     def __synchronize(self):
         if synchronize_folder(
-                current_login=self.__wpw.login,
-                other_login=self.__text['current_user'],
-                current_folder=self.list_checkBox.currentText(),
-                other_folder=self.__text['current_folder'],
-                token=self.token
+                sender_login=self.__wpw.login,
+                receiver_id=self.__data['sender_id'],
+                sender_folder=self.list_checkBox.currentText(),
+                receiver_folder=self.__data['sender_folder'],
+                token=self.__wpw.token
         ):
-            if not download_version(
-                    login=self.login,
-                    path=self.list_checkBox.currentText(),
-                    token=self.token,
-                    flag=True
-            ):
-                show_dialog('Error', 'Error occurred while synchronizing.\nProcess was stopped.')
+            threading.Thread(name='download_version', target=download_version, kwargs={
+                'login': self.__wpw.login,
+                'path': self.list_checkBox.currentText(),
+                'token': self.__wpw.token,
+                'flag': True
+            }).start()
 
     def deny(self):
         self.__socket.send_answer({
-            'current_user': self.__text['other_user'],
+            'sender_login': self.__data['receiver_login'],
             'choice': False,
-            'other_user': self.__text['current_user'],
+            'receiver_login': self.__data['sender_login'],
         })
         self.__flag = False
         self.close()

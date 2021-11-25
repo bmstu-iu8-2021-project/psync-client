@@ -1,3 +1,5 @@
+import threading
+
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QMainWindow, QAbstractItemView, QTableWidget, QTableWidgetItem, QCheckBox
@@ -145,21 +147,28 @@ class SWindow(QMainWindow):
             if self.sync_tableWidget.item(i, 1) is not None:
                 check_box = self.sync_tableWidget.cellWidget(i, 0)
                 if check_box.isChecked():
+                    # HERE
                     if synchronize_folder(
                             current_login=self.__login,
-                            other_login=self.sync_tableWidget.item(i, 1).text(),
+                            other_id=self.sync_tableWidget.item(i, 1).text(),
                             current_folder=self.sync_tableWidget.item(i, 2).text(),
                             other_folder=self.sync_tableWidget.item(i, 3).text(),
                             token=self.__wpw.token
                     ):
-                        if not download_version(
-                                login=self.__login,
-                                path=self.sync_tableWidget.item(i, 2).text(),
-                                token=self.__token,
-                                flag=True
-                        ):
-                            show_dialog('Error', 'Error occurred while synchronizing.\nProcess was stopped.')
-                            break
+                        # if not download_version(
+                        #         login=self.__login,
+                        #         path=self.sync_tableWidget.item(i, 2).text(),
+                        #         token=self.__token,
+                        #         flag=True
+                        # ):
+                        #     show_dialog('Error', 'Error occurred while synchronizing.\nProcess was stopped.')
+                        #     break
+                        threading.Thread(name='download_version', target=download_version, args={
+                            'login': self.__login,
+                            'path': self.sync_tableWidget.item(i, 2).text(),
+                            'token': self.__token,
+                            'flag': True
+                        }).start()
                 else:
                     terminate_sync(
                         current_login=self.__login,

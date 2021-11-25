@@ -21,16 +21,16 @@ def terminate_sync(current_login, other_id, current_folder, other_folder, token)
     return check_request(request)
 
 
-def synchronize_folder(current_login, current_folder, other_login, other_folder, token):
+def synchronize_folder(sender_login, sender_folder, receiver_id, receiver_folder, token):
     head = {'Authorization': token}
     request = requests.get(
         f'{PROTOCOL}://{IP}:{PORT}/synchronize_folder/',
         params={
-            'current_login': current_login,
-            'current_mac': get_mac(),
-            'current_folder': current_folder,
-            'other_login': other_login,
-            'other_folder': other_folder,
+            'sender_login': sender_login,
+            'sender_mac': get_mac(),
+            'sender_folder': sender_folder,
+            'receiver_id': receiver_id,
+            'receiver_folder': receiver_folder,
         },
         headers=head
     )
