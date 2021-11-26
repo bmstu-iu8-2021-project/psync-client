@@ -149,23 +149,15 @@ class SWindow(QMainWindow):
                 if check_box.isChecked():
                     # HERE
                     if synchronize_folder(
-                            current_login=self.__login,
-                            other_id=self.sync_tableWidget.item(i, 1).text(),
-                            current_folder=self.sync_tableWidget.item(i, 2).text(),
-                            other_folder=self.sync_tableWidget.item(i, 3).text(),
-                            token=self.__wpw.token
+                            sender_login=self.__login,
+                            receiver_id=self.sync_tableWidget.item(i, 1).text(),
+                            sender_folder=self.sync_tableWidget.item(i, 3).text(),
+                            receiver_folder=self.sync_tableWidget.item(i, 4).text(),
+                            token=self.__token
                     ):
-                        # if not download_version(
-                        #         login=self.__login,
-                        #         path=self.sync_tableWidget.item(i, 2).text(),
-                        #         token=self.__token,
-                        #         flag=True
-                        # ):
-                        #     show_dialog('Error', 'Error occurred while synchronizing.\nProcess was stopped.')
-                        #     break
-                        threading.Thread(name='download_version', target=download_version, args={
+                        threading.Thread(name='download_version', target=download_version, kwargs={
                             'login': self.__login,
-                            'path': self.sync_tableWidget.item(i, 2).text(),
+                            'path': self.sync_tableWidget.item(i, 3).text(),
                             'token': self.__token,
                             'flag': True
                         }).start()
@@ -175,7 +167,7 @@ class SWindow(QMainWindow):
                         other_id=self.sync_tableWidget.item(i, 1).text(),
                         current_folder=self.sync_tableWidget.item(i, 3).text(),
                         other_folder=self.sync_tableWidget.item(i, 4).text(),
-                        token=self.__wpw.token
+                        token=self.__token
                     )
         self.__flag = True
         self.close()
@@ -186,11 +178,11 @@ class SWindow(QMainWindow):
             if show_verification_dialog('Terminate synchronization', 'Are you sure you want to '
                                                                      'terminate this synchronization?'):
                 if terminate_sync(
-                        current_login=self.__wpw.login,
+                        current_login=self.__login,
                         other_id=self.sync_tableWidget.item(row, 0).text(),
                         current_folder=self.sync_tableWidget.item(row, 2).text(),
                         other_folder=self.sync_tableWidget.item(row, 3).text(),
-                        token=self.__wpw.token
+                        token=self.__token
                 ):
                     self.__data = get_synchronized(
                         login=self.__login,
@@ -208,6 +200,6 @@ class SWindow(QMainWindow):
                             other_id=self.sync_tableWidget.item(i, 1).text(),
                             current_folder=self.sync_tableWidget.item(i, 3).text(),
                             other_folder=self.sync_tableWidget.item(i, 4).text(),
-                            token=self.__wpw.token
+                            token=self.__token
                         )
         self.__wpw.setEnabled(True)
