@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtWidgets import QMainWindow
 
-from UI_functional.change_perosnal_data import change_password
+from UI_functional.change_password import change_password
 from UI.call_ui import show_dialog
 
 

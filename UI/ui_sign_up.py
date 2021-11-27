@@ -13,7 +13,7 @@ class SUWindow(QMainWindow):
         self.siw = siw
 
         self.setWindowTitle('SyncGad • Sign Up')
-        self.setGeometry(600, 300, 280, 235)
+        self.setGeometry(600, 300, 280, 195)
         self.setFixedSize(self.size())
 
         font = QtGui.QFont()
@@ -25,28 +25,22 @@ class SUWindow(QMainWindow):
         self.login_lineEdit.setPlaceholderText('Enter your login')
         self.login_lineEdit.textChanged.connect(self.is_login_valid)
 
-        self.mail_lineEdit = QtWidgets.QLineEdit(self)
-        self.mail_lineEdit.setGeometry(10, 76, 260, 31)
-        self.mail_lineEdit.setFont(font)
-        self.mail_lineEdit.setPlaceholderText('Enter your mail')
-        self.mail_lineEdit.textChanged.connect(self.is_mail_valid)
-
         self.password_lineEdit = QtWidgets.QLineEdit(self)
-        self.password_lineEdit.setGeometry(10, 116, 260, 31)
+        self.password_lineEdit.setGeometry(10, 76, 260, 31)
         self.password_lineEdit.setFont(font)
         self.password_lineEdit.setEchoMode(QtWidgets.QLineEdit.Password)
         self.password_lineEdit.setPlaceholderText('Enter your password')
         self.password_lineEdit.textChanged.connect(self.is_password_valid)
 
         self.pasrep_lineEdit = QtWidgets.QLineEdit(self)
-        self.pasrep_lineEdit.setGeometry(10, 156, 260, 31)
+        self.pasrep_lineEdit.setGeometry(10, 116, 260, 31)
         self.pasrep_lineEdit.setFont(font)
         self.pasrep_lineEdit.setEchoMode(QtWidgets.QLineEdit.Password)
         self.pasrep_lineEdit.setPlaceholderText('Repeat your password')
         self.pasrep_lineEdit.textChanged.connect(self.are_passwords_same)
 
         self.signup_Button = QtWidgets.QPushButton(self)
-        self.signup_Button.setGeometry(180, 196, 90, 28)
+        self.signup_Button.setGeometry(180, 156, 90, 28)
         self.signup_Button.setText("Sign up")
         self.signup_Button.clicked.connect(self.accept)
 
@@ -60,22 +54,15 @@ class SUWindow(QMainWindow):
         self.login_Label.setWordWrap(True)
         self.login_Label.hide()
 
-        self.mail_Label = QtWidgets.QLabel(self)
-        self.mail_Label.setGeometry(280, 75, 0, 0)
-        self.mail_Label.setFont(font)
-        self.mail_Label.setStyleSheet("color: rgb(255, 0, 0);")
-        self.mail_Label.setWordWrap(True)
-        self.mail_Label.hide()
-
         self.password_Label = QtWidgets.QLabel(self)
-        self.password_Label.setGeometry(280, 115, 0, 0)
+        self.password_Label.setGeometry(280, 75, 0, 0)
         self.password_Label.setFont(font)
         self.password_Label.setStyleSheet("color: rgb(255, 0, 0);")
         self.password_Label.setWordWrap(True)
         self.password_Label.hide()
 
         self.pasrep_Label = QtWidgets.QLabel(self)
-        self.pasrep_Label.setGeometry(280, 155, 0, 0)
+        self.pasrep_Label.setGeometry(280, 115, 0, 0)
         self.pasrep_Label.setFont(font)
         self.pasrep_Label.setStyleSheet("color: rgb(255, 0, 0);")
         self.pasrep_Label.setWordWrap(True)
@@ -93,17 +80,6 @@ class SUWindow(QMainWindow):
         else:
             self.login_Label.hide()
             self.fix_size()
-
-    def is_mail_valid(self):
-        flag, text = data_validation.is_mail_valid(self.mail_lineEdit.text())
-        if flag or not self.mail_lineEdit.text():
-            self.mail_Label.hide()
-            self.fix_size()
-        else:
-            self.setFixedWidth(440)
-            self.mail_Label.setText(text)
-            self.mail_Label.adjustSize()
-            self.mail_Label.show()
 
     def is_password_valid(self):
         flag, text = data_validation.is_password_valid(self.password_lineEdit.text())
@@ -130,8 +106,7 @@ class SUWindow(QMainWindow):
             self.pasrep_Label.show()
 
     def fix_size(self):
-        if not (self.mail_Label.isVisible() or
-                self.password_Label.isVisible() or
+        if not (self.password_Label.isVisible() or
                 self.pasrep_Label.isVisible() or
                 self.login_Label.isVisible()):
             self.setFixedWidth(280)
@@ -140,7 +115,7 @@ class SUWindow(QMainWindow):
         if self.width() == 280:
             token = register(
                 login=self.login_lineEdit.text(),
-                mail=self.mail_lineEdit.text(),
+                # mail=self.mail_lineEdit.text(),
                 password=self.password_lineEdit.text()
             )
             if token:

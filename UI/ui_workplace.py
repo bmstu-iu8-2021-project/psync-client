@@ -4,7 +4,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QMainWindow, QInputDialog, QFileDialog, QAbstractItemView, QTableWidget, QTableWidgetItem
 from PyQt5.QtGui import QIcon
 
-from UI import ui_about, create_menu, ui_change_password, ui_change_email, ui_to_update, ui_accept_synchronize
+from UI import ui_about, create_menu, ui_change_password, ui_to_update, ui_accept_synchronize
 from UI import ui_synchronized
 from UI_functional.synchronized import synchronize_folder
 from UI_functional.workplace import add_version, update_version, delete_version, delete_user, get_folders, make_actual
@@ -299,10 +299,10 @@ class WPWindow(QMainWindow):
         self.cp_window = ui_change_password.CPWindow(self)
         self.cp_window.show()
 
-    @QtCore.pyqtSlot()
-    def change_mail(self):
-        self.ce_window = ui_change_email.CEWindow(self)
-        self.ce_window.show()
+    # @QtCore.pyqtSlot()
+    # def change_mail(self):
+    #     self.ce_window = ui_change_email.CEWindow(self)
+    #     self.ce_window.show()
 
     @QtCore.pyqtSlot()
     def delete_account(self):

@@ -16,13 +16,6 @@ def is_login_valid(login):
     return True, ''
 
 
-def is_mail_valid(mail):
-    pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$'
-    if not re.match(pattern, mail):
-        return False, 'Mail seams to be incorrect'
-    return True, ''
-
-
 def is_password_valid(password):
     if 7 < len(password) < 41:
         res = [

@@ -13,10 +13,6 @@ def du_menu(obj):
     changepass_action.setStatusTip('Change the password')
     changepass_action.triggered.connect(obj.change_password)
 
-    changemail_action = QAction(QIcon('icons/menu/change_mail.svg'), '&Change mail', obj)
-    changemail_action.setStatusTip('Change the mail address')
-    changemail_action.triggered.connect(obj.change_mail)
-
     delac_action = QAction(QIcon('icons/menu/delete_account.svg'), '&Delete account', obj)
     delac_action.setStatusTip('Delete your account')
     delac_action.triggered.connect(obj.delete_account)
@@ -30,7 +26,6 @@ def du_menu(obj):
     exitpr_action.triggered.connect(obj.exit_profile)
 
     profile_menu.addAction(changepass_action)
-    profile_menu.addAction(changemail_action)
     profile_menu.addAction(delac_action)
     profile_menu.addSeparator()
     profile_menu.addAction(showsync_action)

@@ -113,8 +113,8 @@ def add_version(login, path, version, token):
     folder_content = get_json(get_files(path))
     folder_content['login'] = login
     folder_content['mac'] = mac
-    folder_content['path_file'] = path
-    folder_content['new_version'] = version
+    folder_content['folder_path'] = path
+    folder_content['version'] = version
     folder_content['is_actual'] = False
 
     head = {'Content-Type': 'application/json', 'Authorization': token}
@@ -198,7 +198,7 @@ def update_version(login, path, version, token):
         params={
             'login': login,
             'mac': get_mac(),
-            'path_file': path,
+            'folder_path': path,
             'version': version
         },
         headers=head
@@ -262,7 +262,7 @@ def download_version(login, path, token, version=None, flag=False):
         params={
             'login': login,
             'mac': get_mac(),
-            'path': path,
+            'folder_path': path,
             'version': version,
         },
         headers=head

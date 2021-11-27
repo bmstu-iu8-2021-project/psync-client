@@ -7,8 +7,8 @@ from data_processing.get_folder_data import get_mac
 from UI.call_ui import show_dialog
 
 
-def register(login, mail, password):
-    if mail and login and password:
+def register(login, password):
+    if login and password:
         if requests.get(
                 f'{PROTOCOL}://{IP}:{PORT}/find_login/',
                 params={
@@ -16,18 +16,12 @@ def register(login, mail, password):
                 }
         ).text == 'False':
             show_dialog('Wrong data!', 'This login seems to be taken.')
-        elif requests.get(
-                f'{PROTOCOL}://{IP}:{PORT}/find_email/',
-                params={'email': mail}
-        ).text == 'False':
-            show_dialog('Wrong data!', 'This email seems to be taken.')
         else:
             request = requests.get(
                 f'{PROTOCOL}://{IP}:{PORT}/add_user/',
                 params={
                     'login': login,
                     'mac': get_mac(),
-                    'email': mail,
                     'password': bcrypt.hashpw(password.encode('UTF-8'), bcrypt.gensalt(rounds=5)),
                 })
             if check_request(request):
