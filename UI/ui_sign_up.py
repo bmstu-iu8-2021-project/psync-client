@@ -115,13 +115,14 @@ class SUWindow(QMainWindow):
         if self.width() == 280:
             token = register(
                 login=self.login_lineEdit.text(),
-                # mail=self.mail_lineEdit.text(),
                 password=self.password_lineEdit.text()
             )
-            if token:
+            if token is not None:
                 self.p_window = ui_workplace.WPWindow(self.login_lineEdit.text(), token, self.siw)
                 self.p_window.show()
                 self.hide()
+            else:
+                show_dialog('Connection error!', 'Check your internet connection', 1)
         else:
             show_dialog('Wrong data!', 'Check the correctness of the data you entered.')
 

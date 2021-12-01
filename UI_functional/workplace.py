@@ -53,7 +53,7 @@ def check_actuality(login, json_data, token):
             if check_request(request):
                 to_change = request.json()
                 if len(to_change['folder']):
-                    return request.json()
+                    return to_change
     return None
 
 
@@ -296,8 +296,8 @@ def download_version(login, path, token, version=None, flag=False):
                 path_file = join(root, file)
                 os.utime(
                     path_file,
-                    (arch_data[path_file[path_file.find('/') + 1:]],
-                     arch_data[path_file[path_file.find('/') + 1:]])
+                    (arch_data[path_file[path_file.find('/') + 1:].replace('\\', '/')],
+                     arch_data[path_file[path_file.find('/') + 1:].replace('\\', '/')])
                 )
 
 
