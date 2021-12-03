@@ -1,3 +1,4 @@
+import os.path
 import threading
 
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -10,6 +11,7 @@ from UI_functional.synchronized import synchronize_folder
 from UI_functional.workplace import add_version, update_version, delete_version, delete_user, get_folders, make_actual
 from UI_functional.workplace import check_actuality, download_version, synchronize, get_synchronized
 from UI.call_ui import show_dialog, show_verification_dialog
+from data_processing.data_validation import is_version_valid
 from connection import sockets
 
 
@@ -153,11 +155,15 @@ class WPWindow(QMainWindow):
                 'Enter a version name so that you can recognize this version.',
             )
             if flag:
-                if add_version(login=self.login, path=path_name, version=version, token=self.token):
-                    self.fill_table(get_folders(
-                        login=self.login,
-                        token=self.token
-                    ))
+                pair = is_version_valid(version)
+                if pair[0]:
+                    if add_version(login=self.login, path=path_name, version=version, token=self.token):
+                        self.fill_table(get_folders(
+                            login=self.login,
+                            token=self.token
+                        ))
+                else:
+                    show_dialog('Invalid version name!', pair[1])
 
     def delete_version(self):
         row = self.folders_tableWidget.currentRow()
@@ -248,25 +254,29 @@ class WPWindow(QMainWindow):
             font = QtGui.QFont()
             font.setBold(True)
             if not (self.folders_tableWidget.item(row, 0).font() == font):
-                if show_verification_dialog('Make version actual',
-                                            'Are you sure you want to make this version actual?\n'
-                                            'It will be updated now.'):
-                    update_version(
-                        login=self.login,
-                        path=self.folders_tableWidget.item(row, 0).text(),
-                        version=self.folders_tableWidget.item(row, 1).text(),
-                        token=self.token
-                    )
-                    if make_actual(
+                if os.path.exists(self.folders_tableWidget.item(row, 0).text()):
+                    if show_verification_dialog('Make version actual',
+                                                'Are you sure you want to make this version actual?\n'
+                                                'It will be updated now.'):
+                        update_version(
                             login=self.login,
                             path=self.folders_tableWidget.item(row, 0).text(),
                             version=self.folders_tableWidget.item(row, 1).text(),
                             token=self.token
-                    ):
-                        self.fill_table(get_folders(
-                            login=self.login,
-                            token=self.token
-                        ))
+                        )
+                        if make_actual(
+                                login=self.login,
+                                path=self.folders_tableWidget.item(row, 0).text(),
+                                version=self.folders_tableWidget.item(row, 1).text(),
+                                token=self.token
+                        ):
+                            self.fill_table(get_folders(
+                                login=self.login,
+                                token=self.token
+                            ))
+                else:
+                    show_dialog('Impossible', 'It looks like you have deleted or renamed this folder.\n'
+                                              'Impossible to make it actual.')
 
     def notifications(self, data):
         if data['type'] == 'request_to_synchronize':

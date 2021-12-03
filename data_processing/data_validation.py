@@ -4,15 +4,14 @@ from UI.call_ui import show_dialog
 
 
 def is_login_valid(login):
-    alphabet = '0123456789qwertyuiopasdfghjklzxcvbnm_-.'
     if len(login) > 20:
         return False, 'The login is to long (more than 20)'
     if login.isdigit():
         return False, 'Login can`t consist only of numbers'
-    else:
-        for let in login.lower():
-            if let not in alphabet:
-                return False, 'Login cannot contain this symbol: %s' % let
+    alphabet = '0123456789qwertyuiopasdfghjklzxcvbnm_-.'
+    for sym in login.lower():
+        if sym not in alphabet:
+            return False, 'Login cannot contain this symbol: %s' % sym
     return True, ''
 
 
@@ -28,6 +27,16 @@ def is_password_valid(password):
             return True, ''
         return False, 'The password is too weak'
     return False, 'The password must be\nlonger than 8 characters'
+
+
+def is_version_valid(version):
+    if len(version) > 20:
+        return False, 'The version name is to long (more than 20)'
+    alphabet = '0123456789qwertyuiopasdfghjklzxcvbnm_-.+, '
+    for sym in version.lower():
+        if sym not in alphabet:
+            return False, 'Version name cannot contain this symbol: %s' % sym
+    return True, ''
 
 
 def check_request(req):

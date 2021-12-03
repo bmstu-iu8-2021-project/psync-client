@@ -2,6 +2,7 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QAbstractItemView, QTableWidget, QTableWidgetItem, QCheckBox
 from PyQt5.QtWidgets import QMainWindow
+import os
 
 from UI_functional.workplace import update_actual_folder, make_no_actual, get_folders, check_synchronized
 from UI import ui_synchronized
@@ -62,13 +63,14 @@ class TUWindow(QMainWindow):
     def fill_table(self):
         for i in range(len(self.__folders)):
             check_box = QCheckBox()
-            check_box.setChecked(True)
+            check_box.setChecked(os.path.exists(self.__folders[i]))
             check_box.setStyleSheet('''
-                QCheckBox {
-                    margin: 20px
-                };
-            ''')
+                              QCheckBox {
+                                  margin: 20px
+                              };
+                          ''')
             self.to_update_tableWidget.setCellWidget(i, 0, check_box)
+            self.to_update_tableWidget.cellWidget(i, 0).setEnabled(os.path.exists(self.__folders[i]))
             self.to_update_tableWidget.setItem(i, 1, QTableWidgetItem(self.__folders[i]))
             self.to_update_tableWidget.item(i, 1).setToolTip(self.to_update_tableWidget.item(i, 1).text())
 

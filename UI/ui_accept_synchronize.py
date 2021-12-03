@@ -21,38 +21,38 @@ class ASWindow(QMainWindow):
         self.__wpw.setEnabled(False)
 
         self.setWindowTitle('SyncGad • Accepting')
-        self.setGeometry(400, 400, 400, 263)
+        self.setGeometry(400, 400, 400, 313)
         self.setFixedSize(self.size())
 
         font = QtGui.QFont()
         font.setPointSize(12)
 
         self.desc_Label = QtWidgets.QLabel(self)
-        self.desc_Label.setGeometry(10, 3, 390, 180)
+        self.desc_Label.setGeometry(10, 3, 390, 230)
         self.desc_Label.setFont(font)
         self.desc_Label.setText(f"<h4 style='text-align: justify;'>User <span style='color: #999999;'>"
-                                f"<em>{self.__data['sender_login']}</em></span> want to synchronize his local "
+                                f"<em>{self.__data['sender_login']}</em></span> want to<br> synchronize his local "
                                 f"folder<br> <span style='color: #999999;'><em>{self.__data['sender_folder']}"
-                                f"</em></span> with you.</h4><p style='text-align: justify;'>To accept the request, "
+                                f"</em></span><br> with you.</h4><p style='text-align: justify;'>To accept the request, "
                                 f"select the appropriate folder<br> from the list of relevant ones below. Now and in"
                                 f"<br> the future, during authorization, the contents of<br> your folder will be "
                                 f"automatically updated according<br> to the contents of the user`s folder <strong>"
-                                f"{self.__data['sender_login']}</strong>. If the<br> selected folder is no longer "
-                                f"relevant, the connection<br> with <strong>{self.__data['sender_login']}"
+                                f"{self.__data['sender_login']}</strong>.<br> If the selected folder is no longer "
+                                f"relevant, the<br> connection with <strong>{self.__data['sender_login']}<br>"
                                 f"</strong> will be terminated.</p>")
 
         self.accept_Button = QtWidgets.QPushButton(self)
-        self.accept_Button.setGeometry(240, 223, 70, 30)
+        self.accept_Button.setGeometry(240, 273, 70, 30)
         self.accept_Button.setText('Accept')
         self.accept_Button.clicked.connect(self.accept)
 
         self.deny_Button = QtWidgets.QPushButton(self)
-        self.deny_Button.setGeometry(320, 223, 70, 30)
+        self.deny_Button.setGeometry(320, 273, 70, 30)
         self.deny_Button.setText('Deny')
         self.deny_Button.clicked.connect(self.deny)
 
         self.list_checkBox = QtWidgets.QComboBox(self)
-        self.list_checkBox.setGeometry(10, 188, 380, 25)
+        self.list_checkBox.setGeometry(10, 238, 380, 25)
         check_font = QtGui.QFont()
         check_font.setBold(True)
         for i in range(self.__wpw.folders_tableWidget.rowCount()):

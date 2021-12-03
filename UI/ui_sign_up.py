@@ -121,8 +121,6 @@ class SUWindow(QMainWindow):
                 self.p_window = ui_workplace.WPWindow(self.login_lineEdit.text(), token, self.siw)
                 self.p_window.show()
                 self.hide()
-            else:
-                show_dialog('Connection error!', 'Check your internet connection', 1)
         else:
             show_dialog('Wrong data!', 'Check the correctness of the data you entered.')
 
