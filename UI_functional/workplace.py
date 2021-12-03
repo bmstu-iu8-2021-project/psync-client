@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import QInputDialog
 from data_processing.get_folder_data import get_mac, get_json, get_files
 from data_processing.constants import PROTOCOL, IP, PORT
 from data_processing.data_validation import check_request
-from UI.call_ui import show_dialog
+from UI.call_ui import show_dialog, show_verification_dialog
 
 
 def get_folders(login, token):
@@ -153,9 +153,15 @@ def upload_folder(login, path, version, token):
     # создаем архив
     zip_name = '_'.join([login, path[path.rfind('/') + 1:], version]) + '.zip'
     zip_folder = zipfile.ZipFile(zip_name, 'w')
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            zip_folder.write(join(root, file))
+    if len(os.listdir(path)):
+        for root, dirs, files in os.walk(path):
+            for directory in dirs:
+                if not len(os.listdir(join(root, directory))):
+                    zip_folder.write(join(root, directory))
+            for file in files:
+                zip_folder.write(join(root, file))
+    else:
+        zip_folder.write(path)
     zip_folder.close()
 
     # отправляем архив
@@ -186,24 +192,36 @@ def delete_version(login, path, version, token):
 
 
 def update_version(login, path, version, token):
-    threading.Thread(name='upload_folder', target=upload_folder, kwargs={
-        'login': login,
-        'path': path,
-        'version': version,
-        'token': token
-    }).start()
-    head = {'Authorization': token}
-    request = requests.get(
-        f'{PROTOCOL}://{IP}:{PORT}/update_version/',
-        params={
+    if os.path.exists(path):
+        threading.Thread(name='upload_folder', target=upload_folder, kwargs={
             'login': login,
-            'mac': get_mac(),
-            'folder_path': path,
-            'version': version
-        },
-        headers=head
-    )
-    return check_request(request)
+            'path': path,
+            'version': version,
+            'token': token
+        }).start()
+        head = {'Authorization': token}
+        request = requests.get(
+            f'{PROTOCOL}://{IP}:{PORT}/update_version/',
+            params={
+                'login': login,
+                'mac': get_mac(),
+                'folder_path': path,
+                'version': version
+            },
+            headers=head
+        )
+        return check_request(request)
+    else:
+        if show_verification_dialog('Folder not found', 'It looks like you have deleted or renamed this folder.\n'
+                                                        'If you continue, version will be removed. Continue?'):
+            return delete_version(
+                login=login,
+                path=path,
+                version=version,
+                token=token
+            )
+        else:
+            return None
 
 
 def delete_user(login, token, window):

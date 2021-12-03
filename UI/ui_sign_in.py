@@ -1,7 +1,6 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QApplication, QMainWindow
 import sys
-import json
 
 from UI import call_ui, ui_about, ui_sign_up, create_menu, ui_workplace
 from UI_functional.sign_in import auth
@@ -47,15 +46,10 @@ class SIWindow(QMainWindow):
         if login and password:
             token = auth(login, password)
             if token is not None:
-                if json.loads(token)['token']:
-                    self.password_lineEdit.setText('')
-                    self.p_window = ui_workplace.WPWindow(login, token, self)
-                    self.p_window.show()
-                    self.hide()
-                else:
-                    call_ui.show_dialog('Wrong data!', 'The entered login or password is incorrect.')
-            else:
-                call_ui.show_dialog('Connection error!', 'Check your internet connection', 1)
+                self.password_lineEdit.setText('')
+                self.p_window = ui_workplace.WPWindow(login, token, self)
+                self.p_window.show()
+                self.hide()
         else:
             call_ui.show_dialog('Wrong data!', 'The entered login or password is incorrect.')
         self.password_lineEdit.setText('')

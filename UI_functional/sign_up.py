@@ -1,5 +1,6 @@
 import requests
 import bcrypt
+import json
 
 from data_processing.constants import PROTOCOL, IP, PORT
 from data_processing.data_validation import check_request
@@ -32,11 +33,15 @@ def register(login, password):
                             'login': login,
                             'password': password,
                             'mac': get_mac()
-                        })
+                        },
+                        headers={'Content-Type': 'application/json'}
+                    )
                     if check_request(request):
-                        return request.content
+                        answer = request.json()
+                        answer.pop('access')
+                        return json.dumps(answer)
         except requests.ConnectionError:
-            return None
+            show_dialog('Connection error!', 'Check your internet connection', 1)
     else:
         show_dialog('Wrong data!', 'Check the correctness of the data you entered.')
-    return False
+    return None
