@@ -1,7 +1,6 @@
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtWidgets import QAbstractItemView, QTableWidget, QTableWidgetItem, QCheckBox
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QAbstractItemView, QTableWidget, QTableWidgetItem, QCheckBox, QMainWindow
 import os
 
 from UI_functional.workplace import update_actual_folder, make_no_actual, get_folders, check_synchronized

@@ -10,7 +10,7 @@ import bcrypt
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QInputDialog
 
-from data_processing.get_folder_data import get_mac, get_json, get_files
+from data_processing.get_folder_data import get_mac, get_json, get_files, get_directions
 from data_processing.constants import PROTOCOL, IP, PORT
 from data_processing.data_validation import check_request
 from UI.call_ui import show_dialog, show_verification_dialog
@@ -39,7 +39,8 @@ def check_actuality(login, json_data, token):
         for item in json_data:
             to_check_item = {
                 'name': item['folder'].replace('\\', '/'),
-                'files': get_json(get_files(item['folder']))['files']
+                'files': get_json(get_files(item['folder']))['files'],
+                'directories': get_directions(item['folder'])
             }
             to_check['folder'].append(to_check_item)
 

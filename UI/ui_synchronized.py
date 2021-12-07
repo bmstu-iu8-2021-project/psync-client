@@ -1,5 +1,4 @@
 import threading
-
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QMainWindow, QAbstractItemView, QTableWidget, QTableWidgetItem, QCheckBox

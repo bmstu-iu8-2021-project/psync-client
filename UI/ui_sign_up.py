@@ -3,8 +3,8 @@ from PyQt5.QtWidgets import QMainWindow
 
 from UI import ui_about, create_menu, ui_workplace
 from UI.call_ui import show_dialog
-from data_processing import data_validation
 from UI_functional.sign_up import register
+from data_processing import data_validation
 
 
 class SUWindow(QMainWindow):

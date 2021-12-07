@@ -1,10 +1,8 @@
 import threading
-
 from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QMainWindow
 
-from UI.call_ui import show_dialog
 from UI_functional.synchronized import synchronize_folder
 from UI_functional.workplace import download_version
 from data_processing.get_folder_data import get_mac

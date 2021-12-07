@@ -9,6 +9,14 @@ def get_mac():
     return platform + '_' + mac
 
 
+def get_directions(path_name):
+    folders = set()
+    for root, dirs, files in os.walk(path_name):
+        for direction in dirs:
+            folders.add(os.path.join(root, direction))
+    return list(folders)
+
+
 def get_files(path_name):
     files_list = []
     for root, dirs, files in os.walk(path_name):
