@@ -24,13 +24,13 @@ class Socket(QThread):
 
     @separate_thread
     def join_room(self):
-        self.__socketIO.emit('join_room', {'current_user': self.__login, 'room': 'users'})
+        self.__socketIO.emit('join_room', {'login': self.__login, 'room': 'users'})
         while self.join_flag:
             self.__socketIO.wait(seconds=1)
 
     def message(self, args):
         if type(args) is dict:
-            if args['other_user'] != self.__login:
+            if args['receiver_login'] != self.__login:
                 return
             self.signal.emit(args)
 
@@ -40,4 +40,4 @@ class Socket(QThread):
 
     def leave_room(self):
         self.join_flag = False
-        self.__socketIO.emit('leave_room', {'current_user': self.__login, 'room': 'users'})
+        self.__socketIO.emit('leave_room', {'login': self.__login, 'room': 'users'})

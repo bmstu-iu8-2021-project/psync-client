@@ -1,9 +1,3 @@
-# for mailing
-EMAIL = 'coursework@internet.ru'
-PASSWORD = 'uCy3DJIhMukxlgI0jAU5'
-
-# for requests
 PROTOCOL = 'http'
-IP = '192.168.0.21'
-# IP = '192.168.32.63'
-PORT = '8080'
+IP = '194.67.110.25'
+PORT = '12355'
